@@ -124,3 +124,7 @@ composer phpcbf
 
 GPL v2 or later - [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.org/licenses/gpl-2.0.html)
 
+
+
+---
+Dernière mise à jour : 2025-10-06 13:25:58

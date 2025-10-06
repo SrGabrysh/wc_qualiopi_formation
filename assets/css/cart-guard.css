@@ -1,0 +1,54 @@
+/**
+ * CartGuard - Styles pour le blocage du panier
+ * 
+ * @package WcQualiopiFormation
+ * @since 1.0.0
+ */
+
+/* Notice de test requis */
+.wcqf-test-notice {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  background: #f0f8ff;
+  border-left: 4px solid #2196f3;
+  border-radius: 4px;
+}
+
+.wcqf-test-notice .button {
+  margin-top: 0.5em;
+  background-color: #ff9800;
+  border-color: #ff9800;
+  font-weight: bold;
+}
+
+.wcqf-test-notice .button:hover {
+  background-color: #e68900;
+  border-color: #e68900;
+}
+
+/* Message de checkout bloqué */
+.wcqf-checkout-blocked {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  background: #fff3cd;
+  border-left: 4px solid #ff9800;
+  border-radius: 4px;
+}
+
+/* Test indisponible */
+.wcqf-test-unavailable {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  background: #f8d7da;
+  border-left: 4px solid #dc3545;
+  border-radius: 4px;
+}
+
+/* Bouton CTA modifié */
+.wcqf-test-cta {
+  display: inline-block;
+  padding: 0.75em 1.5em;
+  font-size: 1.1em;
+  text-align: center;
+  transition: all 0.3s ease;
+}

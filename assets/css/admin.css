@@ -1,0 +1,64 @@
+/**
+ * Admin Styles
+ * 
+ * @package WcQualiopiFormation
+ * @since 1.0.0
+ */
+
+/* WC Qualiopi Formation - Admin Styles */
+
+/* Settings page */
+.wcqf-settings-section {
+  background: #fff;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.wcqf-settings-section h2 {
+  margin-top: 0;
+  border-bottom: 1px solid #e5e5e5;
+  padding-bottom: 10px;
+}
+
+/* Progress viewer */
+.wcqf-progress-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.wcqf-progress-table th,
+.wcqf-progress-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.wcqf-progress-table th {
+  background-color: #f7f7f7;
+  font-weight: 600;
+}
+
+/* Status badges */
+.wcqf-status {
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.wcqf-status--completed {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.wcqf-status--pending {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.wcqf-status--abandoned {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+

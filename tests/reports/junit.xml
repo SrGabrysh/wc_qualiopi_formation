@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" tests="6" assertions="11" errors="0" warnings="0" failures="1" skipped="0" time="0.420035">
+    <testsuite name="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" tests="6" assertions="11" errors="0" warnings="0" failures="1" skipped="0" time="0.420035">
+      <testcase name="test_nonce_validation" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="53" assertions="2" time="0.266804"/>
+      <testcase name="test_basic_sql_injection_protection" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="24" assertions="3" time="0.084351"/>
+      <testcase name="test_basic_xss_protection" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="39" assertions="2" time="0.001802"/>
+      <testcase name="test_basic_security_functionality" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="17" assertions="1" time="0.000731"/>
+      <testcase name="test_data_sanitization" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="77" assertions="1" time="0.064994">
+        <failure type="PHPUnit\Framework\ExpectationFailedException">SecurityBasicTest::test_data_sanitization
+Failed asserting that '&lt;script&gt;alert("XSS")&lt;/script&gt;Test' does not contain "&lt;script&gt;".
+
+E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php:82
+E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\vendor\pestphp\pest\src\Console\Command.php:119
+E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\vendor\pestphp\pest\bin\pest:62
+E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\vendor\pestphp\pest\bin\pest:63</failure>
+      </testcase>
+      <testcase name="test_user_permission_validation" class="SecurityBasicTest" classname="SecurityBasicTest" file="E:\Mon Drive\00 - Dev\01 - Codes\Sites web\TB-Formation\dev_plugin_wc_qualiopi_steps\Plugins\wc_qualiopi_formation\tests\Unit\Security\SecurityBasicTest.php" line="66" assertions="2" time="0.001353"/>
+    </testsuite>
+  </testsuite>
+</testsuites>

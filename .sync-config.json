@@ -1,0 +1,82 @@
+{
+  "version": "2.2",
+  "description": "Configuration pour Sync-ToDDEV-Ameliore.ps1 v2.2",
+
+  "paths": {
+    "source": ".",
+    "target": "\\\\wsl$\\Ubuntu\\home\\gabrysh\\projects\\tb-wp-dev\\web\\wp-content\\plugins\\wc_qualiopi_formation"
+  },
+
+  "sync": {
+    "mode": "standard",
+    "comment_mode": "Options: 'standard' (copie incrementale) | 'mirror' (synchronisation complete avec suppression)",
+    "parseRobocopyOutput": true
+  },
+
+  "robocopy": {
+    "excludeDirectories": ["node_modules", ".git", "vendor", "tests"],
+    "excludeFiles": [
+      "*.md",
+      "*.bat",
+      "*.ps1",
+      "sync_*.py",
+      "*.log",
+      ".sync-config.json"
+    ],
+    "options": ["/E", "/NJH", "/NJS", "/NDL", "/NP"]
+  },
+
+  "verification": {
+    "criticalFiles": [
+      "wc_qualiopi_formation.php",
+      "src/Core/Plugin.php",
+      "assets/js/form-frontend.js"
+    ],
+    "enableChecksums": false,
+    "http": {
+      "enabled": true,
+      "endpoint": "/wp-json",
+      "expectedStatus": 200,
+      "timeout": 10
+    }
+  },
+
+  "logging": {
+    "enabled": true,
+    "logDirectory": "./logs",
+    "logFile": "sync-{date}.log",
+    "maxLogFiles": 10,
+    "defaultLevel": "Info",
+    "reportFile": "sync-report-{date}.json"
+  },
+
+  "defaults": {
+    "force": false,
+    "verify": true,
+    "clearCache": true,
+    "restartDDEV": false,
+    "installDeps": false,
+    "quiet": false
+  },
+
+  "dependencies": {
+    "context": "windows",
+    "comment_context": "Options: 'windows' (composer local) | 'ddev' (via ddev composer)",
+    "composerOptions": ["--no-dev", "--optimize-autoloader"]
+  },
+
+  "hooks": {
+    "preSync": [],
+    "postSync": [],
+    "comment": "Exemples: 'npm run build', 'ddev wp rewrite flush'"
+  },
+
+  "ddev": {
+    "wslDistribution": "Ubuntu",
+    "projectPath": "~/projects/tb-wp-dev",
+    "siteUrl": "https://tb-wp-dev.ddev.site",
+    "php": {
+      "reloadOpcache": true
+    }
+  }
+}

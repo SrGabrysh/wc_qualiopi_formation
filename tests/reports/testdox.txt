@@ -1,0 +1,8 @@
+Security Basic
+ [x] Nonce validation
+ [x] Basic sql injection protection
+ [x] Basic xss protection
+ [x] Basic security functionality
+ [ ] Data sanitization
+ [x] User permission validation
+

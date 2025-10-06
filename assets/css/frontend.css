@@ -1,0 +1,48 @@
+/**
+ * Frontend Styles
+ * 
+ * @package WcQualiopiFormation
+ * @since 1.0.0
+ */
+
+/* WC Qualiopi Formation - Frontend Styles */
+
+/* Cart Guard Styles */
+.wcqf-cart-blocked {
+  display: none;
+}
+
+.wcqf-test-cta {
+  background-color: #0073aa;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 4px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 10px;
+}
+
+.wcqf-test-cta:hover {
+  background-color: #005177;
+  color: #fff;
+}
+
+/* Checkout Autofill indicator */
+.wcqf-autofilled {
+  border-left: 3px solid #46b450;
+}
+
+/* Progress indicator */
+.wcqf-progress-bar {
+  width: 100%;
+  height: 4px;
+  background-color: #f0f0f0;
+  margin-bottom: 20px;
+}
+
+.wcqf-progress-bar-fill {
+  height: 100%;
+  background-color: #0073aa;
+  transition: width 0.3s ease;
+}
+

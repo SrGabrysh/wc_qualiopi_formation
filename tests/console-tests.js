@@ -464,10 +464,36 @@ const WCQFTests = {
   },
 
   /**
+   * QUICK FILL : Remplir rapidement avec des données valides nécessitant reformatage
+   * Utile pour dev : remplit le formulaire sans tout retaper
+   */
+  quickFill: async function () {
+    this.separator("QUICK FILL : Remplissage rapide pour dev");
+    this.clearAll();
+    await this.wait(500);
+
+    // Données valides mais nécessitant reformatage
+    this.fillField("1", "81107469900034"); // SIRET valide et existant
+    this.fillField("7_3", "gabriel"); // Prénom minuscule → sera formaté
+    this.fillField("7_6", "duteurtre"); // Nom minuscule → sera formaté
+    this.fillField("9", "06 14 28 71 51"); // Téléphone avec espaces → sera formaté en E164
+    this.fillField("10", "Gabriel.DUTEURTRE@Gmail.COM"); // Email majuscules → sera mis en minuscules
+
+    console.log("📝 Formulaire pré-rempli avec des données valides");
+    console.log("✅ Prêt pour tester - Cliquez sur 'Vérifier SIRET' manuellement");
+    console.log(
+      "💡 Ou lancez : WCQFTests.clickVerify() pour vérifier automatiquement"
+    );
+  },
+
+  /**
    * Afficher l'aide
    */
   help: function () {
     console.log("📖 AIDE - WC QUALIOPI FORMATION TESTS");
+    console.log("");
+    console.log("🚀 UTILITAIRE DEV :");
+    console.log("  WCQFTests.quickFill()           - Remplir formulaire rapidement");
     console.log("");
     console.log("COMMANDES DISPONIBLES :");
     console.log("  WCQFTests.runAll()              - Exécuter tous les tests");

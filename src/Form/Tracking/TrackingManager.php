@@ -68,7 +68,7 @@ class TrackingManager {
 		$this->field_mapper   = new FieldMapper();
 		$this->storage        = new TrackingStorage( $logger );
 
-		LoggingHelper::log_db_operation( $this->logger, 'init', 'TrackingManager', 'storage_initialized' );
+		LoggingHelper::log_db_operation( $this->logger, 'init', 'TrackingManager', array( 'status' => 'storage_initialized' ) );
 	}
 
 	/**
@@ -96,7 +96,8 @@ class TrackingManager {
 			LoggingHelper::log_validation_error( $this->logger, 'entry_form_data', array( 'entry' => $entry, 'form' => $form ), 'Invalid entry or form data provided' );
 			return;
 		}
-		LoggingHelper::log_db_operation( $this->logger, 'capture', 'TrackingManager', 'submission_start', array(
+		LoggingHelper::log_db_operation( $this->logger, 'capture', 'TrackingManager', array(
+			'status'   => 'submission_start',
 			'form_id'  => $form['id'],
 			'entry_id' => $entry['id'] ?? null,
 		) );
@@ -107,7 +108,8 @@ class TrackingManager {
 			return;
 		}
 
-		LoggingHelper::log_db_operation( $this->logger, 'track', 'TrackingManager', 'form_tracked', array(
+		LoggingHelper::log_db_operation( $this->logger, 'track', 'TrackingManager', array(
+			'status'   => 'form_tracked',
 			'form_id'  => $form['id'],
 			'entry_id' => $entry['id'] ?? null,
 		) );
@@ -176,7 +178,8 @@ class TrackingManager {
 		$result = $wpdb->insert( $table_name, $insert_data, $formats );
 
 		if ( false === $result ) {
-			LoggingHelper::log_db_operation( $this->logger, 'error', 'TrackingManager', 'save_failed', array(
+			LoggingHelper::log_db_operation( $this->logger, 'error', 'TrackingManager', array(
+				'status'   => 'save_failed',
 				'token'    => $token,
 				'form_id'  => $form_id,
 				'entry_id' => $entry_id,
@@ -187,7 +190,8 @@ class TrackingManager {
 
 		$insert_id = $wpdb->insert_id;
 
-		LoggingHelper::log_db_operation( $this->logger, 'success', 'TrackingManager', 'submission_saved', array(
+		LoggingHelper::log_db_operation( $this->logger, 'success', 'TrackingManager', array(
+			'status'      => 'submission_saved',
 			'tracking_id' => $insert_id,
 			'token'       => $token ? substr( $token, 0, 10 ) . '...' : 'N/A',
 			'form_id'     => $form_id,

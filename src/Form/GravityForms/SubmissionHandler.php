@@ -104,8 +104,35 @@ class SubmissionHandler {
 			return $validation_result;
 		}
 
+		// Extraire les informations du token pour validation
+		$token_parts = \WcQualiopiFormation\Security\Token\TokenGenerator::parse( $token );
+		if ( false === $token_parts ) {
+			$validation_result['is_valid'] = false;
+			$this->logger->error( 'Token parsing failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+			
+			// Ajouter message d'erreur global.
+			$validation_result['form']['validation_message'] = __( 'Erreur de validation : format de token invalide. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
+			
+			return $validation_result;
+		}
+		
+		// Décoder le payload pour récupérer user_id et product_id
+		$decoded_payload = \WcQualiopiFormation\Security\Token\TokenGenerator::decode_payload( $token_parts['payload'] );
+		if ( false === $decoded_payload ) {
+			$validation_result['is_valid'] = false;
+			$this->logger->error( 'Token payload decoding failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+			
+			// Ajouter message d'erreur global.
+			$validation_result['form']['validation_message'] = __( 'Erreur de validation : contenu de token invalide. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
+			
+			return $validation_result;
+		}
+		
+		$user_id = $decoded_payload['user_id'];
+		$product_id = $decoded_payload['product_id'];
+		
 		// Valider le token HMAC.
-		$token_data = TokenManager::verify( $token );
+		$token_data = TokenManager::validate( $token, $user_id, $product_id );
 
 		if ( false === $token_data ) {
 			$validation_result['is_valid'] = false;

@@ -1,6 +1,5 @@
 # Composer
 /vendor/
-composer.lock
 
 # IDE
 /.idea/
@@ -27,7 +26,6 @@ yarn-error.log
 
 # Tests
 /.phpunit.result.cache
-/phpunit.xml
 
 # Logs
 *.log

@@ -237,9 +237,10 @@ class AjaxHandler {
 			$company_data['denomination'] ?? $company_data['nom'] . ' ' . $company_data['prenom']
 		);
 
-		// Préparer la réponse finale.
-		$response = array(
-			'data'             => $mapped_data,
+		// Préparer la réponse finale SANS double wrapping
+		// Structure attendue côté JS : response.data.xxx
+		// ATTENTION : Utiliser + au lieu de array_merge pour préserver les clés numériques !
+		$response = $mapped_data + array(
 			'denomination'     => $company_data['denomination'] ?? '',
 			'est_actif'        => $company_data['is_active'] ?? true,
 			'type_entreprise'  => $company_data['type_entreprise'] ?? '',
@@ -254,8 +255,9 @@ class AjaxHandler {
 			'mapped_data_keys' => array_keys( $mapped_data ),
 		) );
 
-		// Retourner les données (format compatible code source).
-		AjaxHelper::send_success( $response, 'Données entreprise récupérées avec succès' );
+		// Appeler directement wp_send_json_success pour éviter le double wrapping
+		// Structure finale : {success: true, data: {champs + métadonnées}}
+		\wp_send_json_success( $response );
 	}
 }
 

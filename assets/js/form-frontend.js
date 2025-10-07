@@ -127,8 +127,8 @@
             console.log("[WCQF] Réponse AJAX complète:", response.data);
 
             // Étape 1 : Remplir les champs API
-            this.fillFormFields(formId, response.data.data);
-            console.log("[WCQF] Champs API remplis:", response.data.data);
+            this.fillFormFields(formId, response.data);
+            console.log("[WCQF] Champs API remplis:", response.data);
 
             // Étape 2 : RÉINJECTER les noms/prénoms FORMATÉS dans les champs
             if (response.data.representant) {

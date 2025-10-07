@@ -45,10 +45,13 @@ class SecurityHelper {
 	/**
 	 * Vérifie les capabilities admin
 	 *
-	 * @param string $capability Capability requise (défaut: 'manage_options').
+	 * @param string $capability Capability requise (défaut: Constants::CAP_MANAGE_SETTINGS).
 	 * @return bool True si autorisé.
 	 */
-	public static function check_admin_capability( $capability = 'manage_options' ) {
+	public static function check_admin_capability( $capability = null ) {
+		if ( null === $capability ) {
+			$capability = Constants::CAP_MANAGE_SETTINGS;
+		}
 		return current_user_can( $capability );
 	}
 

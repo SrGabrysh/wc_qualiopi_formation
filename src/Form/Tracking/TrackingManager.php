@@ -314,7 +314,7 @@ class TrackingManager {
 	 */
 	public function get_stats() {
 		// Security: Check admin capabilities
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( Constants::CAP_MANAGE_SETTINGS ) ) {
 			return array();
 		}
 		global $wpdb;

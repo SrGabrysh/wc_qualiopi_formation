@@ -38,8 +38,8 @@ class ProgressStorage {
 	 * @return array|false Array with id and token, or false on failure
 	 */
 	public static function start( int $user_id, int $product_id, string $cart_key = '', array $initial_data = array() ) {
-		// Security: Validate user permissions
-		if ( ! current_user_can( 'read' ) && $user_id !== get_current_user_id() ) {
+		// Security: Validate user permissions - only check if different user
+		if ( $user_id !== get_current_user_id() && ! current_user_can( Constants::CAP_MANAGE_SETTINGS ) ) {
 			return false;
 		}
 		global $wpdb;

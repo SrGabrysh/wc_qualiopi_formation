@@ -16,6 +16,8 @@ use WcQualiopiFormation\Form\Siren\SirenAutocomplete;
 use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsGenerator;
 use WcQualiopiFormation\Helpers\NameFormatter;
+use WcQualiopiFormation\Helpers\PhoneFormatter;
+use WcQualiopiFormation\Helpers\SanitizationHelper;
 use WcQualiopiFormation\Helpers\ValidationHelper;
 use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\AjaxHelper;
@@ -101,25 +103,31 @@ class AjaxHandler {
 		}
 
 		// Récupérer et valider les paramètres.
-		$form_id = isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0;
-		$siret   = isset( $_POST['siret'] ) ? sanitize_text_field( wp_unslash( $_POST['siret'] ) ) : '';
-		$prenom  = isset( $_POST['prenom'] ) ? sanitize_text_field( wp_unslash( $_POST['prenom'] ) ) : '';
-		$nom     = isset( $_POST['nom'] ) ? sanitize_text_field( wp_unslash( $_POST['nom'] ) ) : '';
+		$form_id   = isset( $_POST['form_id'] ) ? absint( $_POST['form_id'] ) : 0;
+		$siret     = isset( $_POST['siret'] ) ? sanitize_text_field( wp_unslash( $_POST['siret'] ) ) : '';
+		$prenom    = isset( $_POST['prenom'] ) ? sanitize_text_field( wp_unslash( $_POST['prenom'] ) ) : '';
+		$nom       = isset( $_POST['nom'] ) ? sanitize_text_field( wp_unslash( $_POST['nom'] ) ) : '';
+		$telephone = isset( $_POST['telephone'] ) ? sanitize_text_field( wp_unslash( $_POST['telephone'] ) ) : '';
+		$email     = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 
 		LoggingHelper::log_ajax_request( $this->logger, 'parametres_extraits', array(
 			'form_id' => $form_id,
 			'siret' => $siret,
 			'prenom' => $prenom,
 			'nom' => $nom,
+			'telephone' => $telephone,
+			'email' => $email,
 		) );
 
-		// Validation des paramètres requis
-		$required_params = array( 'form_id', 'siret', 'nom', 'prenom' );
+		// Validation des paramètres requis (TOUS obligatoires)
+		$required_params = array( 'form_id', 'siret', 'nom', 'prenom', 'telephone', 'email' );
 		$params_data = array(
 			'form_id' => $form_id,
 			'siret' => $siret,
 			'nom' => $nom,
 			'prenom' => $prenom,
+			'telephone' => $telephone,
+			'email' => $email,
 		);
 
 		$params_validation = ValidationHelper::validate_ajax_params( $required_params, $params_data );
@@ -158,6 +166,82 @@ class AjaxHandler {
 			'nom_avant' => $nom,
 			'nom_apres' => $nom_formate,
 		) );
+
+		// ============================================================================
+		// FORMATAGE ET VALIDATION TÉLÉPHONE ET EMAIL (pattern identique nom/prénom)
+		// ============================================================================
+		
+		// Formatage téléphone (champ ID '9') - OBLIGATOIRE
+		if ( ! empty( $telephone ) ) {
+			$this->logger->info( '[AJAX] Formatage téléphone demandé', array(
+				'telephone_input' => $telephone,
+			) );
+
+			$telephone_result = PhoneFormatter::format( $telephone );
+
+			$this->logger->debug( '[AJAX] Résultat formatage téléphone', array(
+				'input' => $telephone,
+				'result_valid' => $telephone_result['valid'],
+				'result_value' => $telephone_result['value'],
+				'result_error' => $telephone_result['error'],
+			) );
+
+			if ( ! $telephone_result['valid'] ) {
+				$this->logger->warning( '[AJAX] Téléphone invalide - Envoi erreur validation', array(
+					'telephone' => $telephone,
+					'error' => $telephone_result['error'],
+				) );
+				AjaxHelper::send_validation_error( 'telephone', $telephone_result['error'] );
+			}
+
+			$telephone_formate = $telephone_result['value'];
+
+			$this->logger->info( '[AJAX] Téléphone formaté avec succès', array(
+				'telephone_avant' => $telephone,
+				'telephone_apres' => $telephone_formate,
+			) );
+		} else {
+			// Téléphone vide = déjà géré par validate_ajax_params() mais log pour traçabilité
+			$this->logger->warning( '[AJAX] Téléphone vide - Bloqué par validation paramètres requis', array(
+				'telephone' => $telephone,
+			) );
+		}
+
+		// Validation email (champ ID '10') - OBLIGATOIRE
+		if ( ! empty( $email ) ) {
+			$this->logger->info( '[AJAX] Validation email demandée', array(
+				'email_input' => $email,
+			) );
+
+			$email_result = SanitizationHelper::validate_email_rfc( $email );
+
+			$this->logger->debug( '[AJAX] Résultat validation email', array(
+				'input' => $email,
+				'result_valid' => $email_result['valid'],
+				'result_value' => $email_result['value'],
+				'result_error' => $email_result['error'],
+			) );
+
+			if ( ! $email_result['valid'] ) {
+				$this->logger->warning( '[AJAX] Email invalide - Envoi erreur validation', array(
+					'email' => $email,
+					'error' => $email_result['error'],
+				) );
+				AjaxHelper::send_validation_error( 'email', $email_result['error'] );
+			}
+
+			$email_formate = $email_result['value'];
+
+			$this->logger->info( '[AJAX] Email validé avec succès', array(
+				'email_avant' => $email,
+				'email_apres' => $email_formate,
+			) );
+		} else {
+			// Email vide = déjà géré par validate_ajax_params() mais log pour traçabilité
+			$this->logger->warning( '[AJAX] Email vide - Bloqué par validation paramètres requis', array(
+				'email' => $email,
+			) );
+		}
 
 		// Vérifier que le formulaire a un mapping.
 		if ( ! $this->field_mapper->form_has_mapping( $form_id ) ) {
@@ -200,10 +284,12 @@ class AjaxHandler {
 			'mapping_keys' => array_keys( $mapping ),
 		) );
 
-		// Préparer les données du représentant (AVEC NOMS FORMATÉS ET VALIDÉS).
+		// Préparer les données du représentant (AVEC NOMS FORMATÉS ET VALIDÉS + TÉLÉPHONE/EMAIL).
 		$representant = array(
-			'prenom' => $prenom_formate,
-			'nom'    => $nom_formate,
+			'prenom'    => $prenom_formate,
+			'nom'       => $nom_formate,
+			'telephone' => $telephone_formate,
+			'email'     => $email_formate,
 		);
 
 		$this->logger->info( '[AJAX] Representant prepare', array(

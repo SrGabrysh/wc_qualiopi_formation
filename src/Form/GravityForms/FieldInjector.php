@@ -186,7 +186,7 @@ class FieldInjector {
 			'wcqf-form-frontend',
 			plugin_dir_url( dirname( dirname( dirname( __FILE__ ) ) ) ) . 'assets/css/form-frontend.css',
 			array(),
-			Constants::VERSION
+			WCQF_VERSION
 		);
 
 		// Enqueue JS frontend.
@@ -194,7 +194,7 @@ class FieldInjector {
 			'wcqf-form-frontend',
 			plugin_dir_url( dirname( dirname( dirname( __FILE__ ) ) ) ) . 'assets/js/form-frontend.js',
 			array( 'jquery' ),
-			Constants::VERSION,
+			WCQF_VERSION,
 			true
 		);
 

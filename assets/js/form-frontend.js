@@ -76,9 +76,11 @@
       }
 
       // Récupérer les données du représentant depuis les champs spécifiques
-      // Champ 7.3 = Prénom, Champ 7.6 = Nom
+      // Champ 7.3 = Prénom, Champ 7.6 = Nom, Champ 9 = Téléphone, Champ 10 = Email
       const prenomValue = $("#input_" + formId + "_7_3").val() || "";
       const nomValue = $("#input_" + formId + "_7_6").val() || "";
+      const telephoneValue = $("#input_" + formId + "_9").val() || "";
+      const emailValue = $("#input_" + formId + "_10").val() || "";
 
       // Validation : Nom et Prénom sont OBLIGATOIRES
       if (
@@ -105,6 +107,26 @@
         return;
       }
 
+      // Validation : Téléphone OBLIGATOIRE
+      if (!telephoneValue || telephoneValue.trim() === "") {
+        this.showMessage(
+          $message,
+          "⚠️ Veuillez renseigner le numéro de téléphone.",
+          "error"
+        );
+        return;
+      }
+
+      // Validation : Email OBLIGATOIRE
+      if (!emailValue || emailValue.trim() === "") {
+        this.showMessage(
+          $message,
+          "⚠️ Veuillez renseigner l'adresse email.",
+          "error"
+        );
+        return;
+      }
+
       // Désactiver le bouton et afficher le loader
       $button.prop("disabled", true);
       $loader.show();
@@ -121,6 +143,8 @@
           siret: siretValue,
           prenom: prenomValue,
           nom: nomValue,
+          telephone: telephoneValue,
+          email: emailValue,
         },
         success: (response) => {
           if (response.success && response.data) {
@@ -130,11 +154,15 @@
             this.fillFormFields(formId, response.data);
             console.log("[WCQF] Champs API remplis:", response.data);
 
-            // Étape 2 : RÉINJECTER les noms/prénoms FORMATÉS dans les champs
+            // Étape 2 : RÉINJECTER les données formatées dans les champs
             if (response.data.representant) {
               console.log(
-                "[WCQF] Réinjection noms formatés:",
+                "[WCQF] Réinjection données formatées:",
                 response.data.representant
+              );
+              console.log(
+                "[WCQF DEBUG] Contenu complet representant:",
+                JSON.stringify(response.data.representant, null, 2)
               );
 
               if (response.data.representant.prenom) {
@@ -154,6 +182,26 @@
                 console.log(
                   "[WCQF] Nom réinjecté:",
                   response.data.representant.nom
+                );
+              }
+
+              if (response.data.representant.telephone) {
+                $("#input_" + formId + "_9").val(
+                  response.data.representant.telephone
+                );
+                console.log(
+                  "[WCQF] Téléphone réinjecté (E164):",
+                  response.data.representant.telephone
+                );
+              }
+
+              if (response.data.representant.email) {
+                $("#input_" + formId + "_10").val(
+                  response.data.representant.email
+                );
+                console.log(
+                  "[WCQF] Email réinjecté (validé):",
+                  response.data.representant.email
                 );
               }
 
@@ -273,12 +321,13 @@
     },
 
     /**
-     * Surveille les changements sur les champs Prénom/Nom
+     * Surveille les changements sur les champs Prénom/Nom/Téléphone/Email
      */
     watchRepresentantFields: function (formId) {
       const self = this;
       let updateTimeout;
 
+      // Surveillance nom/prénom pour mentions légales
       $("#input_" + formId + "_7_3, #input_" + formId + "_7_6").on(
         "change blur",
         function () {
@@ -306,6 +355,145 @@
           }, 300); // Délai de 300ms
         }
       );
+
+      // Surveillance téléphone pour formatage temps réel
+      $("#input_" + formId + "_9").on("blur", function () {
+        const phoneValue = $(this).val();
+        if (phoneValue && phoneValue.trim() !== "") {
+          self.formatPhoneField($(this), phoneValue);
+        }
+      });
+
+      // Surveillance email pour validation temps réel
+      $("#input_" + formId + "_10").on("blur", function () {
+        const emailValue = $(this).val();
+        if (emailValue && emailValue.trim() !== "") {
+          self.validateEmailField($(this), emailValue);
+        }
+      });
+    },
+
+    /**
+     * Formate un champ téléphone côté client (feedback immédiat)
+     */
+    formatPhoneField: function ($field, phoneValue) {
+      console.log("[WCQF Frontend] Formatage téléphone début", {
+        phoneValue: phoneValue,
+        fieldId: $field.attr("id"),
+      });
+
+      // Nettoyage : garder seulement les chiffres
+      let cleaned = phoneValue.replace(/[^0-9]/g, "");
+
+      console.log("[WCQF Frontend] Nettoyage téléphone", {
+        original: phoneValue,
+        cleaned: cleaned,
+      });
+
+      // Validation longueur et préfixe
+      if (cleaned.length === 10 && /^0[1-9]/.test(cleaned)) {
+        // Formatage E164 : +33 + numéro sans le 0
+        let e164 = "+33" + cleaned.substring(1);
+        $field.val(e164);
+
+        console.log("[WCQF Frontend] Formatage E164 réussi", {
+          original: phoneValue,
+          e164: e164,
+        });
+
+        // Feedback visuel positif
+        this.showFieldFeedback($field, "success", "Numéro formaté en E164");
+      } else if (cleaned.length > 0) {
+        console.warn("[WCQF Frontend] Formatage E164 échoué", {
+          cleaned: cleaned,
+          length: cleaned.length,
+        });
+
+        // Feedback visuel d'erreur
+        this.showFieldFeedback(
+          $field,
+          "error",
+          "Format invalide (10 chiffres requis)"
+        );
+      }
+    },
+
+    /**
+     * Valide et formate un champ email côté client (feedback immédiat)
+     */
+    validateEmailField: function ($field, emailValue) {
+      console.log("[WCQF Frontend] Validation email début", {
+        emailValue: emailValue,
+        fieldId: $field.attr("id"),
+      });
+
+      // Étape 1 : Formater en minuscules et supprimer espaces
+      let formatted = emailValue.toLowerCase().trim();
+
+      console.log("[WCQF Frontend] Formatage email", {
+        original: emailValue,
+        formatted: formatted,
+      });
+
+      // Étape 2 : Validation regex basique
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const isValid = emailRegex.test(formatted);
+
+      console.log("[WCQF Frontend] Validation email résultat", {
+        email: formatted,
+        isValid: isValid,
+      });
+
+      if (isValid) {
+        // Réinjecter l'email formaté (minuscules) dans le champ
+        $field.val(formatted);
+
+        console.log("[WCQF Frontend] Email formaté et réinjecté", {
+          original: emailValue,
+          formatted: formatted,
+        });
+
+        // Feedback visuel positif
+        this.showFieldFeedback(
+          $field,
+          "success",
+          "Email formaté en minuscules"
+        );
+      } else {
+        // Feedback visuel d'erreur
+        this.showFieldFeedback($field, "error", "Format email invalide");
+      }
+    },
+
+    /**
+     * Affiche un feedback visuel pour un champ
+     */
+    showFieldFeedback: function ($field, type, message) {
+      console.log("[WCQF Frontend] Affichage feedback", {
+        fieldId: $field.attr("id"),
+        type: type,
+        message: message,
+      });
+
+      // Supprimer les anciens feedbacks
+      $field.siblings(".wcqf-field-feedback").remove();
+
+      // Ajouter le nouveau feedback
+      const $feedback = $(
+        '<div class="wcqf-field-feedback wcqf-feedback-' +
+          type +
+          '">' +
+          message +
+          "</div>"
+      );
+      $field.after($feedback);
+
+      // Auto-suppression après 3 secondes
+      setTimeout(function () {
+        $feedback.fadeOut(300, function () {
+          $(this).remove();
+        });
+      }, 3000);
     },
 
     /**

@@ -45,7 +45,7 @@ if (!defined('WCQF_VERSION')) {
 }
 
 if (!defined('WCQF_TEXT_DOMAIN')) {
-    define('WCQF_TEXT_DOMAIN', 'wc-qualiopi-formation');
+    define('WCQF_TEXT_DOMAIN', 'wcqf');
 }
 
 if (!defined('WCQF_PATH')) {

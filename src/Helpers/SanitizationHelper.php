@@ -58,7 +58,7 @@ class SanitizationHelper {
 	 * @return string Textearea sanitizé.
 	 */
 	public static function sanitize_post_textarea( $key, $default = '' ) {
-		return isset( $_POST[ $key ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $key ] ) ) : $default;
+		return isset( $_POST[ $key ] ) ? \sanitize_textarea_field( wp_unslash( $_POST[ $key ] ) ) : $default;
 	}
 
 	/**
@@ -227,5 +227,85 @@ class SanitizationHelper {
 		$text = preg_replace( '/\b\d{14}\b/', '[SIRET_MASQUÉ]', $text );
 		
 		return $text;
+	}
+
+	/**
+	 * Valide un email selon les standards RFC (WordPress native) - AVEC VALIDATION
+	 * Pattern identique à PhoneFormatter pour cohérence architecture
+	 *
+	 * @param string $email Adresse email brute.
+	 * @return array ['value' => string, 'valid' => bool, 'error' => string|null]
+	 */
+	public static function validate_email_rfc( $email ) {
+		LoggingHelper::debug( '[EmailValidator] Début validation RFC', array(
+			'input' => $email,
+			'input_length' => strlen( $email ),
+		) );
+
+		if ( empty( $email ) ) {
+			LoggingHelper::warning( '[EmailValidator] Email vide', array(
+				'input' => $email,
+			) );
+			return array(
+				'value' => '',
+				'valid' => false,
+				'error' => 'L\'adresse email ne peut pas être vide.',
+			);
+		}
+
+		// Étape 1 : Sanitization WordPress (convertit en minuscules automatiquement)
+		$sanitized = sanitize_email( $email );
+
+		// Étape 1.5 : Forcer minuscules + trim (au cas où)
+		$sanitized = strtolower( trim( $sanitized ) );
+
+		LoggingHelper::debug( '[EmailValidator] Sanitization WordPress', array(
+			'original' => $email,
+			'sanitized' => $sanitized,
+			'changed' => $email !== $sanitized,
+			'is_lowercase' => $sanitized === strtolower( $sanitized ),
+		) );
+
+		if ( empty( $sanitized ) ) {
+			LoggingHelper::warning( '[EmailValidator] Email invalidé par sanitization', array(
+				'original' => $email,
+				'sanitized' => $sanitized,
+			) );
+			return array(
+				'value' => $email,
+				'valid' => false,
+				'error' => 'L\'adresse email contient des caractères non autorisés.',
+			);
+		}
+
+		// Étape 2 : Validation RFC via WordPress
+		$is_valid = \is_email( $sanitized );
+
+		LoggingHelper::debug( '[EmailValidator] Validation is_email()', array(
+			'email' => $sanitized,
+			'is_valid' => $is_valid,
+		) );
+
+		if ( ! $is_valid ) {
+			LoggingHelper::warning( '[EmailValidator] Email invalide selon RFC', array(
+				'email' => $sanitized,
+			) );
+			return array(
+				'value' => $email,
+				'valid' => false,
+				'error' => 'Le format de l\'adresse email n\'est pas valide.',
+			);
+		}
+
+		LoggingHelper::info( '[EmailValidator] Validation RFC réussie', array(
+			'original' => $email,
+			'sanitized' => $sanitized,
+		) );
+
+		return array(
+			'value' => $sanitized,
+			'valid' => true,
+			'error' => null,
+		);
 	}
 }

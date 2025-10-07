@@ -84,7 +84,7 @@ class AjaxHelper {
 	 * @return void
 	 */
 	public static function send_permission_error( $message = '' ) {
-		$default_message = __( 'Permissions insuffisantes.', 'wc-qualiopi-formation' );
+		$default_message = __( 'Permissions insuffisantes.', Constants::TEXT_DOMAIN );
 		$final_message = ! empty( $message ) ? $message : $default_message;
 
 		wp_send_json_error( array(
@@ -100,7 +100,7 @@ class AjaxHelper {
 	 * @return void
 	 */
 	public static function send_nonce_error( $message = '' ) {
-		$default_message = __( 'Token de sécurité invalide.', 'wc-qualiopi-formation' );
+		$default_message = __( 'Token de sécurité invalide.', Constants::TEXT_DOMAIN );
 		$final_message = ! empty( $message ) ? $message : $default_message;
 
 		wp_send_json_error( array(
@@ -118,7 +118,7 @@ class AjaxHelper {
 	 */
 	public static function send_missing_params_error( $missing_params, $message = '' ) {
 		$default_message = sprintf(
-			__( 'Paramètres manquants : %s', 'wc-qualiopi-formation' ),
+			__( 'Paramètres manquants : %s', Constants::TEXT_DOMAIN ),
 			implode( ', ', $missing_params )
 		);
 		$final_message = ! empty( $message ) ? $message : $default_message;
@@ -160,7 +160,7 @@ class AjaxHelper {
 	public static function send_api_error( $api_name, $error_message, $code = 'api_error' ) {
 		wp_send_json_error( array(
 			'message' => sprintf(
-				__( 'Erreur API %s : %s', 'wc-qualiopi-formation' ),
+				__( 'Erreur API %s : %s', Constants::TEXT_DOMAIN ),
 				$api_name,
 				$error_message
 			),

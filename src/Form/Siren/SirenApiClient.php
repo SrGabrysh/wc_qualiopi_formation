@@ -45,11 +45,16 @@ class SirenApiClient {
 	 */
 	public function __construct( Logger $logger, $api_key ) {
 		$this->logger  = $logger;
-		// TEMPORAIRE : Hardcode pour test
-		$this->api_key = 'FlwM9Symg1SIox2WYRSN2vhRmCCwRXal';
-		$this->logger->info( '[DEBUG] API Key hardcodee pour test', array(
-			'key_received' => $api_key,
-			'key_used' => $this->api_key,
+		
+		// [MODIFICATION 2025-10-07] Correction : utiliser le paramètre au lieu de la valeur hardcodée
+		// Ancienne version : $this->api_key = 'FlwM9Symg1SIox2WYRSN2vhRmCCwRXal'; (HARDCODÉ)
+		// Nouvelle version : utilisation du paramètre $api_key (depuis ApiKeyManager)
+		$this->api_key = $api_key;
+		
+		$this->logger->info( '[SirenApiClient] API Key configuree', array(
+			'key_present' => ! empty( $api_key ),
+			'key_length' => strlen( $api_key ),
+			'key_preview' => ! empty( $api_key ) ? substr( $api_key, 0, 5 ) . '...' . substr( $api_key, -4 ) : '[empty]',
 		) );
 	}
 

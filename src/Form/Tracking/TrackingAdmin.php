@@ -60,23 +60,28 @@ class TrackingAdmin {
 		}
 
 		?>
-		<div class="wcqf-tracking-table-wrapper">
-			<table class="widefat striped">
-				<thead>
-					<tr>
-						<th><?php esc_html_e( 'Date', Constants::TEXT_DOMAIN ); ?></th>
-						<th><?php esc_html_e( 'Utilisateur', Constants::TEXT_DOMAIN ); ?></th>
-						<th><?php esc_html_e( 'Token', Constants::TEXT_DOMAIN ); ?></th>
-						<th><?php esc_html_e( 'Entreprise', Constants::TEXT_DOMAIN ); ?></th>
-						<th><?php esc_html_e( 'Actions', Constants::TEXT_DOMAIN ); ?></th>
-					</tr>
-				</thead>
-				<tbody>
-					<?php foreach ( $entries as $entry ) : ?>
-						<?php $this->render_tracking_row( $entry ); ?>
-					<?php endforeach; ?>
-				</tbody>
-			</table>
+		<div class="wcqf-settings-section">
+			<?php echo \WcQualiopiFormation\Admin\AdminUi::section_start( __( 'Historique des soumissions', Constants::TEXT_DOMAIN ) ); ?>
+			
+			<div class="wcqf-tracking-table-wrapper">
+				<?php
+				echo \WcQualiopiFormation\Admin\AdminUi::table_start( array(
+					__( 'Date', Constants::TEXT_DOMAIN ),
+					__( 'Utilisateur', Constants::TEXT_DOMAIN ),
+					__( 'Token', Constants::TEXT_DOMAIN ),
+					__( 'Entreprise', Constants::TEXT_DOMAIN ),
+					__( 'Actions', Constants::TEXT_DOMAIN )
+				) );
+				
+				foreach ( $entries as $entry ) {
+					$this->render_tracking_row( $entry );
+				}
+				
+				echo \WcQualiopiFormation\Admin\AdminUi::table_end();
+				?>
+			</div>
+
+			<?php echo \WcQualiopiFormation\Admin\AdminUi::section_end(); ?>
 		</div>
 		<?php
 	}
@@ -107,9 +112,15 @@ class TrackingAdmin {
 			<td><code><?php echo esc_html( substr( $entry->token, 0, 16 ) . '...' ); ?></code></td>
 			<td><?php echo esc_html( $company_name ); ?></td>
 			<td>
-				<button type="button" class="button button-small" onclick="wcqfShowTrackingDetails(<?php echo esc_attr( $entry->id ); ?>)">
-					<?php esc_html_e( 'Détails', Constants::TEXT_DOMAIN ); ?>
-				</button>
+				<?php echo \WcQualiopiFormation\Admin\AdminUi::button( 
+					__( 'Détails', Constants::TEXT_DOMAIN ), 
+					'secondary', 
+					array( 
+						'type' => 'button',
+						'class' => 'button-small',
+						'onclick' => 'wcqfShowTrackingDetails(' . esc_attr( $entry->id ) . ')'
+					) 
+				); ?>
 			</td>
 		</tr>
 		<?php
@@ -161,47 +172,30 @@ class TrackingAdmin {
 		$stats = $this->storage->get_global_stats();
 
 		?>
-		<div class="wcqf-tracking-stats">
-			<div class="wcqf-stat-box">
-				<h3><?php echo esc_html( $stats['total'] ); ?></h3>
-				<p><?php esc_html_e( 'Total', Constants::TEXT_DOMAIN ); ?></p>
+		<div class="wcqf-settings-section">
+			<?php echo \WcQualiopiFormation\Admin\AdminUi::section_start( __( 'Statistiques', Constants::TEXT_DOMAIN ) ); ?>
+			
+			<div class="wcqf-tracking-stats">
+				<div class="wcqf-stat-box">
+					<h3><?php echo esc_html( $stats['total'] ); ?></h3>
+					<p><?php esc_html_e( 'Total', Constants::TEXT_DOMAIN ); ?></p>
+				</div>
+				<div class="wcqf-stat-box">
+					<h3><?php echo esc_html( $stats['today'] ); ?></h3>
+					<p><?php esc_html_e( 'Aujourd\'hui', Constants::TEXT_DOMAIN ); ?></p>
+				</div>
+				<div class="wcqf-stat-box">
+					<h3><?php echo esc_html( $stats['week'] ); ?></h3>
+					<p><?php esc_html_e( '7 derniers jours', Constants::TEXT_DOMAIN ); ?></p>
+				</div>
+				<div class="wcqf-stat-box">
+					<h3><?php echo esc_html( $stats['month'] ); ?></h3>
+					<p><?php esc_html_e( '30 derniers jours', Constants::TEXT_DOMAIN ); ?></p>
+				</div>
 			</div>
-			<div class="wcqf-stat-box">
-				<h3><?php echo esc_html( $stats['today'] ); ?></h3>
-				<p><?php esc_html_e( 'Aujourd\'hui', Constants::TEXT_DOMAIN ); ?></p>
-			</div>
-			<div class="wcqf-stat-box">
-				<h3><?php echo esc_html( $stats['week'] ); ?></h3>
-				<p><?php esc_html_e( '7 derniers jours', Constants::TEXT_DOMAIN ); ?></p>
-			</div>
-			<div class="wcqf-stat-box">
-				<h3><?php echo esc_html( $stats['month'] ); ?></h3>
-				<p><?php esc_html_e( '30 derniers jours', Constants::TEXT_DOMAIN ); ?></p>
-			</div>
+
+			<?php echo \WcQualiopiFormation\Admin\AdminUi::section_end(); ?>
 		</div>
-		<style>
-		.wcqf-tracking-stats {
-			display: flex;
-			gap: 20px;
-			margin: 20px 0;
-		}
-		.wcqf-stat-box {
-			background: #fff;
-			border: 1px solid #ccd0d4;
-			padding: 20px;
-			text-align: center;
-			flex: 1;
-		}
-		.wcqf-stat-box h3 {
-			margin: 0;
-			font-size: 32px;
-			color: #2271b1;
-		}
-		.wcqf-stat-box p {
-			margin: 10px 0 0;
-			color: #646970;
-		}
-		</style>
 		<?php
 	}
 }

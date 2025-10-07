@@ -224,7 +224,7 @@ class CartGuard {
 	}
 
 	/**
-	 * Interception Store API pour WooCommerce Blocks (Expert #1)
+* Interception Store API pour WooCommerce Blocks (Expert #1)
 	 */
 	public function intercept_store_api_checkout( $response, $handler, \WP_REST_Request $request ) {
 		// Security: Validate request
@@ -233,19 +233,13 @@ class CartGuard {
 
 		// Routes Checkout Store API
 		if ( $method === 'POST' && preg_match( '#^/wc/store(/v[0-9]+)?/checkout$#', $route ) ) {
-			// Security: Check user capabilities for checkout
-			if ( ! current_user_can( 'read' ) ) {
-				return new \WP_Error(
-					'wcqf_unauthorized',
-					__( 'Unauthorized access to checkout.', 'wcqf' ),
-					[ 'status' => 403 ]
-				);
-			}
+			// [CORRECTION 2025-10-07] Retirer la vérification current_user_can('read') qui bloque les invités
+			// La logique de blocage should_block_checkout() suffit pour contrôler l'accès
 
 			if ( $this->cart_blocker->should_block_checkout() ) {
 				return new \WP_Error(
 					'wcqf_checkout_blocked',
-					__( 'Le test de positionnement doit être validé avant le paiement.', 'wcqf' ),
+					__( 'Le test de positionnement doit être validé avant le paiement.', Constants::TEXT_DOMAIN ),
 					[ 'status' => 403 ]
 				);
 			}
@@ -348,8 +342,8 @@ class CartGuard {
 	 */
 	public function force_test_validation( int $user_id, int $product_id, bool $validated = true ): void {
 		// Security: Check admin capabilities
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( __( 'Insufficient permissions', 'wcqf' ) );
+		if ( ! current_user_can( Constants::CAP_MANAGE_SETTINGS ) ) {
+			wp_die( __( 'Insufficient permissions', Constants::TEXT_DOMAIN ) );
 		}
 
 		// Security: Sanitize inputs

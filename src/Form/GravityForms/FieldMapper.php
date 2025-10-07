@@ -68,6 +68,8 @@ class FieldMapper {
 		'mentions_legales' => '13',    // Mentions légales.
 		'prenom'           => '7.3',   // Prénom représentant.
 		'nom'              => '7.6',   // Nom représentant.
+		'telephone'        => '9',     // Téléphone représentant (E164).
+		'email'            => '10',    // Email représentant (RFC compliant).
 	);
 
 	/**
@@ -183,7 +185,7 @@ class FieldMapper {
 	}
 
 	/**
-	 * Mappe les champs de base (SIRET, dénomination)
+	 * Mappe les champs de base (SIRET, dénomination, représentant)
 	 *
 	 * @param array $company_data Données de l'entreprise.
 	 * @param array $mapping Mapping des champs.
@@ -207,6 +209,25 @@ class FieldMapper {
 			$this->logger->debug( '[FieldMapper] Denomination mappee', array(
 				'field_id' => $mapping['denomination'],
 				'value' => $company_data['denomination'],
+			) );
+		}
+
+		// Téléphone formaté E164 (depuis representant).
+		$representant = $company_data['representant'] ?? array();
+		if ( ! empty( $mapping['telephone'] ) && ! empty( $representant['telephone'] ) ) {
+			$mapped_data[ $mapping['telephone'] ] = $representant['telephone'];
+			$this->logger->debug( '[FieldMapper] Téléphone mappé', array(
+				'field_id' => $mapping['telephone'],
+				'value' => $representant['telephone'],
+			) );
+		}
+
+		// Email validé RFC (depuis representant).
+		if ( ! empty( $mapping['email'] ) && ! empty( $representant['email'] ) ) {
+			$mapped_data[ $mapping['email'] ] = $representant['email'];
+			$this->logger->debug( '[FieldMapper] Email mappé', array(
+				'field_id' => $mapping['email'],
+				'value' => $representant['email'],
 			) );
 		}
 

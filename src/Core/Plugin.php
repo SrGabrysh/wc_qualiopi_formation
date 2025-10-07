@@ -83,6 +83,7 @@ class Plugin {
 	 */
 	private function init(): void {
 		$this->load_textdomain();
+		$this->migrate_api_keys(); // [AJOUT 2025-10-07] Migration one-time des clés API hardcodées
 		$this->init_modules();
 		$this->register_hooks();
 	}
@@ -112,7 +113,7 @@ class Plugin {
 	private function register_hooks(): void {
 		// Enqueue scripts and styles
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_assets' ) );
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
+		// Note: Admin assets are handled by AdminManager to avoid duplication
 
 		// Version check and update
 		add_action( 'admin_init', array( $this, 'check_version' ) );
@@ -153,32 +154,6 @@ class Plugin {
 		);
 	}
 
-	/**
-	 * Enqueue admin assets
-	 *
-	 * @param string $hook Current admin page hook
-	 */
-	public function enqueue_admin_assets( string $hook ): void {
-		// Only load on plugin settings page
-		if ( 'woocommerce_page_wcqf-settings' !== $hook ) {
-			return;
-		}
-
-		wp_enqueue_style(
-			'wcqf-admin',
-			WCQF_PLUGIN_URL . 'assets/css/admin.css',
-			array(),
-			$this->version
-		);
-
-		wp_enqueue_script(
-			'wcqf-admin',
-			WCQF_PLUGIN_URL . 'assets/js/admin.js',
-			array( 'jquery' ),
-			$this->version,
-			true
-		);
-	}
 
 	/**
 	 * Check plugin version and run update routines if needed
@@ -239,5 +214,43 @@ class Plugin {
 	 */
 	public function get_module_loader(): ModuleLoader {
 		return $this->module_loader;
+	}
+
+	/**
+	 * Migre les clés API hardcodées vers la base de données
+	 * [CORRECTION 2025-10-07] Suppression complète des clés hardcodées pour sécurité
+	 *
+	 * Cette méthode ne fait plus de migration de clés hardcodées.
+	 * Les clés doivent être configurées via ENV, wp-config.php ou l'interface admin.
+	 *
+	 * @return void
+	 */
+	private function migrate_api_keys(): void {
+		// Vérifier si migration déjà effectuée
+		$migration_done = \get_option( 'wcqf_api_keys_migrated', false );
+		if ( $migration_done ) {
+			return;
+		}
+
+		// [CORRECTION 2025-10-07] Logger pour traçabilité
+		$logger = \WcQualiopiFormation\Utils\Logger::get_instance();
+		$logger->info( '[Plugin] Migration des clés API supprimée pour sécurité - utiliser SecretManager/ApiKeyManager' );
+
+		// [CORRECTION 2025-10-07] Notice admin pour informer de la nouvelle approche
+		\add_action( 'admin_notices', function() {
+			?>
+			<div class="notice notice-info is-dismissible">
+				<p>
+					<strong>WC Qualiopi Formation :</strong> 
+					Les clés API doivent maintenant être configurées de manière sécurisée via les variables d'environnement, 
+					wp-config.php ou l'interface d'administration. 
+					Consultez <a href="<?php echo \esc_url( \admin_url( 'options-general.php?page=wcqf-settings&tab=configuration' ) ); ?>">Réglages → WC Qualiopi → Configuration</a>.
+				</p>
+			</div>
+			<?php
+		} );
+
+		// Marquer la migration comme effectuée (pour éviter les notices répétées)
+		\update_option( 'wcqf_api_keys_migrated', true );
 	}
 }

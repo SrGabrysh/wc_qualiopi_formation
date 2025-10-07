@@ -3,7 +3,7 @@
  * Plugin Name: WC Qualiopi Formation
  * Plugin URI: https://tb-web.fr/plugins/wc-qualiopi-formation
  * Description: Plugin unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout et conformité complète
- * Version: 1.0.1
+ * Version: 1.0.0-dev.0
  * Requires at least: 5.8
  * Requires PHP: 8.1
  * Author: TB-Web
@@ -25,7 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants (SRP: Single Responsibility - Configuration)
-define( 'WCQF_VERSION', '1.0.1' );
+define( 'WCQF_VERSION', '1.0.0-dev.0' );
 define( 'WCQF_PLUGIN_FILE', __FILE__ );
 define( 'WCQF_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WCQF_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
@@ -132,6 +132,9 @@ register_deactivation_hook( __FILE__, array( 'WcQualiopiFormation\Core\Deactivat
  * Uses Singleton pattern to ensure single instance
  */
 function wcqf_init() {
+	// Initialiser le timer du LoggingHelper le plus tôt possible
+	\WcQualiopiFormation\Helpers\LoggingHelper::boot();
+	
 	return \WcQualiopiFormation\Core\Plugin::instance();
 }
 

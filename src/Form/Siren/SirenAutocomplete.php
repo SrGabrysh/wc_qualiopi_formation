@@ -13,6 +13,7 @@ defined( 'ABSPATH' ) || exit;
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Security\SecretManager;
 use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\ApiKeyManager;
 use WcQualiopiFormation\Form\Siren\SirenValidator;
 use WcQualiopiFormation\Form\Siren\SirenApiClient;
 use WcQualiopiFormation\Form\Siren\SirenCache;
@@ -100,40 +101,26 @@ class SirenAutocomplete {
 	/**
 	 * Récupère la clé API SIREN
 	 *
-	 * Ordre de priorité :
-	 * 1. Constante wp-config.php (WCQF_SIREN_API_KEY)
-	 * 2. Option WordPress (wcqf_siren_api_key)
-	 * 3. SecretManager (politique de sécurité)
+	 * [MODIFICATION 2025-10-07] Utilisation d'ApiKeyManager pour centraliser la gestion des clés API
+	 * Ancienne version : multi-sources (wp-config, option, SecretManager)
+	 * Nouvelle version : délégation à ApiKeyManager
+	 *   - Gère automatiquement .env, BDD chiffrée, audit trail
+	 *   - Ordre de priorité : 1. Variable d'environnement (.env), 2. Base de données (chiffrée)
+	 *   - Logs sécurisés (aperçu partiel des clés)
 	 *
 	 * @return string|null La clé API ou null si non trouvée.
 	 */
 	private function get_api_key() {
-		// Priorité 1 : Constante wp-config.php.
-		if ( defined( 'WCQF_SIREN_API_KEY' ) && ! empty( constant( 'WCQF_SIREN_API_KEY' ) ) ) {
-			LoggingHelper::log_cache_operation( $this->logger, 'read', 'api_key', 'wp-config.php' );
-			return constant( 'WCQF_SIREN_API_KEY' );
-		}
+		$api_key_manager = ApiKeyManager::get_instance( $this->logger );
+		$api_key = $api_key_manager->get_api_key( 'siren' );
 
-		// Priorité 2 : Option WordPress.
-		$api_key = get_option( 'wcqf_siren_api_key', '' );
 		if ( ! empty( $api_key ) ) {
-			LoggingHelper::log_cache_operation( $this->logger, 'read', 'api_key', 'wordpress_option' );
-			return $api_key;
+			LoggingHelper::log_cache_operation( $this->logger, 'read', 'api_key', 'api_key_manager' );
+		} else {
+			LoggingHelper::log_validation_error( $this->logger, 'api_key', 'not_found', 'No SIREN API key found (check ApiKeyManager config)' );
 		}
 
-		// Priorité 3 : SecretManager.
-		try {
-			$secret_key = SecretManager::get( Constants::SECRET_SIREN_API_KEY );
-			if ( ! empty( $secret_key ) ) {
-				LoggingHelper::log_cache_operation( $this->logger, 'read', 'api_key', 'secret_manager' );
-				return $secret_key;
-			}
-		} catch ( \Exception $e ) {
-			LoggingHelper::log_validation_error( $this->logger, 'secret_manager', $e->getMessage(), 'SecretManager failed to retrieve SIREN API key' );
-		}
-
-		LoggingHelper::log_validation_error( $this->logger, 'api_key', 'not_found', 'No SIREN API key found (neither constant, option, nor SecretManager)' );
-		return null;
+		return $api_key;
 	}
 
 	/**

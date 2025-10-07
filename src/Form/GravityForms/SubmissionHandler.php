@@ -149,7 +149,8 @@ class SubmissionHandler {
 		if ( false !== $siret_field_id ) {
 			$siret = rgar( $_POST, 'input_' . str_replace( '.', '_', $siret_field_id ) );
 
-			if ( ! $this->validate_siret_format( $siret ) ) {
+			// Ne valider que si le SIRET n'est pas vide (permet saisie progressive).
+			if ( ! empty( $siret ) && ! $this->validate_siret_format( $siret ) ) {
 				// Invalider le champ SIRET.
 				foreach ( $form['fields'] as &$field ) {
 					if ( (string) $field->id === (string) $siret_field_id ) {

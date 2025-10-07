@@ -128,7 +128,7 @@ class AjaxHandler {
 			SecurityHelper::ajax_error( __( 'Permissions insuffisantes.', Constants::TEXT_DOMAIN ), 403 );
 		}
 
-		$log_file = $this->logger->get_log_file();
+        $log_file = WP_CONTENT_DIR . '/debug.log';
 
 		if ( ! file_exists( $log_file ) ) {
 			SecurityHelper::ajax_success( array(
@@ -155,7 +155,7 @@ class AjaxHandler {
 			SecurityHelper::ajax_error( __( 'Permissions insuffisantes.', Constants::TEXT_DOMAIN ), 403 );
 		}
 
-		$log_file = $this->logger->get_log_file();
+        $log_file = WP_CONTENT_DIR . '/debug.log';
 
 		if ( ! file_exists( $log_file ) ) {
 			SecurityHelper::ajax_error( __( 'Aucun log disponible.', Constants::TEXT_DOMAIN ), 404 );

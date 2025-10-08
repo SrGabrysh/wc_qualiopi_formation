@@ -10,7 +10,7 @@ namespace WcQualiopiFormation\Form\GravityForms;
 
 defined( 'ABSPATH' ) || exit;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
 
 /**
@@ -18,20 +18,10 @@ use WcQualiopiFormation\Helpers\SanitizationHelper;
  */
 class RepresentantExtractor {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -43,10 +33,10 @@ class RepresentantExtractor {
 	 * @return array ['prenom' => string, 'nom' => string].
 	 */
 	public function extract_from_entry( $form_id, $entry, $mapping ) {
-		$this->logger->debug( '[RepresentantExtractor] extract_from_entry DEBUT', array( 'form_id' => $form_id ) );
+		LoggingHelper::debug( '[RepresentantExtractor] extract_from_entry DEBUT', array( 'form_id' => $form_id ) );
 
 		if ( empty( $mapping ) ) {
-			$this->logger->warning( '[RepresentantExtractor] Aucun mapping, retour donnees vides' );
+			LoggingHelper::warning( '[RepresentantExtractor] Aucun mapping, retour donnees vides' );
 			return $this->get_empty_data();
 		}
 
@@ -61,7 +51,7 @@ class RepresentantExtractor {
 			$nom = SanitizationHelper::sanitize_name( wp_unslash( $entry[ $mapping['nom'] ] ) );
 		}
 
-		$this->logger->info( '[RepresentantExtractor] Donnees extraites', array(
+		LoggingHelper::info( '[RepresentantExtractor] Donnees extraites', array(
 			'prenom' => $prenom,
 			'nom' => $nom,
 		) );

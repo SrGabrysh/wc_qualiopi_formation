@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Settings;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
 use WcQualiopiFormation\Helpers\ConfigFieldBuilder;
 use WcQualiopiFormation\Helpers\ApiKeyManager;
@@ -24,20 +24,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class GeneralTabRenderer {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -51,8 +41,8 @@ class GeneralTabRenderer {
 		$settings = \get_option( Constants::OPTION_SETTINGS, array() );
 		
 		// Initialiser ApiKeyManager et ConfigFieldBuilder
-		$api_key_manager = ApiKeyManager::get_instance( $this->logger );
-		$field_builder = new ConfigFieldBuilder( $this->logger );
+		$api_key_manager = ApiKeyManager::get_instance();
+		$field_builder = new ConfigFieldBuilder();
 
 		// Section : Clés API
 		$field_builder->add_section(
@@ -122,7 +112,7 @@ class GeneralTabRenderer {
 		</div>
 		<?php
 
-		$this->logger->debug( '[GeneralTabRenderer] Configuration rendue', array(
+		LoggingHelper::debug( '[GeneralTabRenderer] Configuration rendue', array(
 			'providers_count' => count( $providers ),
 			'tracking_enabled' => $values['enable_tracking'],
 		) );

@@ -12,7 +12,7 @@
 namespace WcQualiopiFormation\Cart;
 
 use WcQualiopiFormation\Utils\Mapping;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Cart\Helpers\UrlGenerator;
 
 // Security: Exit if accessed directly
@@ -27,14 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class CartBlocker {
 
-	/**
-	 * Instance du logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du validateur de tests
 	 * 
 	 * @var TestValidator
@@ -44,11 +37,9 @@ class CartBlocker {
 	/**
 	 * Constructeur
 	 * 
-	 * @param Logger        $logger         Instance du logger
 	 * @param TestValidator $test_validator Instance du validateur
 	 */
-	public function __construct( Logger $logger, TestValidator $test_validator ) {
-		$this->logger = $logger;
+	public function __construct( TestValidator $test_validator ) {
 		$this->test_validator = $test_validator;
 	}
 
@@ -59,19 +50,19 @@ class CartBlocker {
 	 */
 	public function should_block_checkout(): bool {
 		if ( ! function_exists( 'WC' ) || ! WC() || ! WC()->cart ) {
-			$this->logger->debug( 'CartBlocker: WooCommerce not available' );
+			LoggingHelper::debug( 'CartBlocker: WooCommerce not available' );
 			return false;
 		}
 
 		if ( WC()->cart->is_empty() ) {
-			$this->logger->debug( 'CartBlocker: Cart is empty' );
+			LoggingHelper::debug( 'CartBlocker: Cart is empty' );
 			return false;
 		}
 
 		$pending_tests = $this->get_pending_tests_info();
 		$should_block = ! empty( $pending_tests );
 
-		$this->logger->info(
+		LoggingHelper::info(
 			$should_block ? 'CartBlocker: Blocking checkout' : 'CartBlocker: Allowing checkout',
 			[ 'pending_tests' => count( $pending_tests ) ]
 		);
@@ -93,7 +84,7 @@ class CartBlocker {
 		$current_user_id = get_current_user_id();
 		$cart_items = WC()->cart->get_cart();
 
-		$this->logger->debug( 'CartBlocker: Checking ' . count( $cart_items ) . ' cart items' );
+		LoggingHelper::debug( 'CartBlocker: Checking ' . count( $cart_items ) . ' cart items' );
 
 		foreach ( $cart_items as $cart_item_key => $cart_item ) {
 			$product_id = $cart_item['product_id'];
@@ -102,13 +93,13 @@ class CartBlocker {
 			$mapping = Mapping::get_for_product( $product_id );
 
 			if ( ! $mapping || empty( $mapping['active'] ) ) {
-				$this->logger->debug( "CartBlocker: Product {$product_id} - no mapping or inactive" );
+				LoggingHelper::debug( "CartBlocker: Product {$product_id} - no mapping or inactive" );
 				continue;
 			}
 
 			// Vérifier si le test est déjà validé
 			if ( $this->test_validator->is_test_validated( $current_user_id, $product_id ) ) {
-				$this->logger->debug( "CartBlocker: Product {$product_id} - test already validated" );
+				LoggingHelper::debug( "CartBlocker: Product {$product_id} - test already validated" );
 				continue;
 			}
 
@@ -116,10 +107,10 @@ class CartBlocker {
 			$test_info = $this->build_test_info( $product_id, $cart_item, $cart_item_key, $mapping );
 			$pending_tests[] = $test_info;
 
-			$this->logger->info( "CartBlocker: Product {$product_id} - added to pending tests" );
+			LoggingHelper::info( "CartBlocker: Product {$product_id} - added to pending tests" );
 		}
 
-		$this->logger->info( 'CartBlocker: Found ' . count( $pending_tests ) . ' pending tests' );
+		LoggingHelper::info( 'CartBlocker: Found ' . count( $pending_tests ) . ' pending tests' );
 		return $pending_tests;
 	}
 

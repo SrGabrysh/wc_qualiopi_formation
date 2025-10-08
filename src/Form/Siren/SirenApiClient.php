@@ -11,7 +11,7 @@ namespace WcQualiopiFormation\Form\Siren;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de communication avec l'API SIREN
@@ -23,14 +23,7 @@ use WcQualiopiFormation\Utils\Logger;
  */
 class SirenApiClient {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Clé API SIREN
 	 *
 	 * @var string
@@ -40,18 +33,15 @@ class SirenApiClient {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger $logger Instance du logger.
 	 * @param string $api_key Clé API SIREN.
 	 */
-	public function __construct( Logger $logger, $api_key ) {
-		$this->logger  = $logger;
-		
+	public function __construct( $api_key ) {
 		// [MODIFICATION 2025-10-07] Correction : utiliser le paramètre au lieu de la valeur hardcodée
 		// Ancienne version : $this->api_key = 'FlwM9Symg1SIox2WYRSN2vhRmCCwRXal'; (HARDCODÉ)
 		// Nouvelle version : utilisation du paramètre $api_key (depuis ApiKeyManager)
 		$this->api_key = $api_key;
 		
-		$this->logger->info( '[SirenApiClient] API Key configuree', array(
+		LoggingHelper::info( '[SirenApiClient] API Key configuree', array(
 			'key_present' => ! empty( $api_key ),
 			'key_length' => strlen( $api_key ),
 			'key_preview' => ! empty( $api_key ) ? substr( $api_key, 0, 5 ) . '...' . substr( $api_key, -4 ) : '[empty]',
@@ -98,7 +88,7 @@ class SirenApiClient {
 		);
 
 		// DEBUG : Log des paramètres de la requête
-		$this->logger->info( '[DEBUG] Parametres requete API', array(
+		LoggingHelper::info( '[DEBUG] Parametres requete API', array(
 			'url' => $url,
 			'api_key_length' => strlen( $this->api_key ),
 			'api_key_start' => substr( $this->api_key, 0, 10 ) . '...',
@@ -110,13 +100,13 @@ class SirenApiClient {
 		while ( $attempts < Constants::API_SIREN_MAX_RETRIES ) {
 			++$attempts;
 
-			$this->logger->debug( "API call attempt {$attempts}/{Constants::API_SIREN_MAX_RETRIES}", array( 'url' => $url ) );
+			LoggingHelper::debug( "API call attempt {$attempts}/{Constants::API_SIREN_MAX_RETRIES}", array( 'url' => $url ) );
 
 			$response = wp_remote_get( $url, $args );
 
 			// Vérifier erreur réseau.
 			if ( is_wp_error( $response ) ) {
-				$this->logger->warning( "Attempt {$attempts} failed: " . $response->get_error_message() );
+				LoggingHelper::warning( "Attempt {$attempts} failed: " . $response->get_error_message() );
 
 				if ( $attempts < Constants::API_SIREN_MAX_RETRIES ) {
 					sleep( Constants::API_SIREN_RETRY_WAIT * $attempts );
@@ -133,7 +123,7 @@ class SirenApiClient {
 			switch ( $status_code ) {
 				case 200:
 					// LOG PAYLOAD COMPLET
-					$this->logger->info( '[API SIREN] PAYLOAD BRUT RECU', array(
+					LoggingHelper::info( '[API SIREN] PAYLOAD BRUT RECU', array(
 						'endpoint' => $endpoint,
 						'status' => $status_code,
 						'body_length' => strlen( $body ),
@@ -143,11 +133,11 @@ class SirenApiClient {
 					$data = json_decode( $body, true );
 
 					if ( json_last_error() !== JSON_ERROR_NONE ) {
-						$this->logger->error( 'JSON decode error: ' . json_last_error_msg() );
+						LoggingHelper::error( 'JSON decode error: ' . json_last_error_msg() );
 						return new \WP_Error( 'json_decode_error', __( 'Erreur lors du décodage de la réponse API.', Constants::TEXT_DOMAIN ) );
 					}
 
-					$this->logger->info( '[API SIREN] PAYLOAD DECODE', array(
+					LoggingHelper::info( '[API SIREN] PAYLOAD DECODE', array(
 						'endpoint' => $endpoint,
 						'data_keys' => array_keys( $data ),
 						'data' => $data, // PAYLOAD DÉCODÉ
@@ -156,18 +146,18 @@ class SirenApiClient {
 					return $data;
 
 				case 400:
-					$this->logger->error( "Invalid data (400): {$body}" );
+					LoggingHelper::error( "Invalid data (400): {$body}" );
 					return new \WP_Error( 'invalid_data', __( 'Le SIRET fourni est invalide ou mal formaté.', Constants::TEXT_DOMAIN ) );
 
 				case 404:
-					$this->logger->warning( "Resource not found (404): {$body}" );
+					LoggingHelper::warning( "Resource not found (404): {$body}" );
 					return new \WP_Error( 'not_found', __( 'Aucune entreprise trouvée avec ce SIRET.', Constants::TEXT_DOMAIN ) );
 
 				case 500:
 				case 502:
 				case 503:
 					// Erreur serveur : retry.
-					$this->logger->warning( "Server error ({$status_code}) - Attempt {$attempts}/{Constants::API_SIREN_MAX_RETRIES}" );
+					LoggingHelper::warning( "Server error ({$status_code}) - Attempt {$attempts}/{Constants::API_SIREN_MAX_RETRIES}" );
 
 					if ( $attempts < Constants::API_SIREN_MAX_RETRIES ) {
 						sleep( Constants::API_SIREN_RETRY_WAIT * $attempts );
@@ -177,7 +167,7 @@ class SirenApiClient {
 					return new \WP_Error( 'server_error', __( 'Le service API SIREN est temporairement indisponible.', Constants::TEXT_DOMAIN ) );
 
 				default:
-					$this->logger->error( "API error ({$status_code}): {$body}" );
+					LoggingHelper::error( "API error ({$status_code}): {$body}" );
 					return new \WP_Error( 'api_error', sprintf( __( 'Erreur API (%d).', Constants::TEXT_DOMAIN ), $status_code ) );
 			}
 		}

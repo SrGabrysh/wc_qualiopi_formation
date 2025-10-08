@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Form\Tracking;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,14 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class TrackingAdmin {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du storage
 	 *
 	 * @var TrackingStorage
@@ -40,9 +33,8 @@ class TrackingAdmin {
 	 * @param Logger          $logger Instance du logger.
 	 * @param TrackingStorage $storage Instance du storage.
 	 */
-	public function __construct( Logger $logger, TrackingStorage $storage ) {
-		$this->logger  = $logger;
-		$this->storage = $storage;
+	public function __construct() {
+				$this->storage = $storage;
 	}
 
 	/**

@@ -10,7 +10,7 @@ namespace WcQualiopiFormation\Core;
 
 defined( 'ABSPATH' ) || exit;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de migration des données
@@ -21,14 +21,7 @@ use WcQualiopiFormation\Utils\Logger;
  */
 class DataMigrator {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Options à migrer depuis wc_qualiopi_steps
 	 *
 	 * @var array
@@ -56,7 +49,6 @@ class DataMigrator {
 	 * Constructeur
 	 */
 	public function __construct() {
-		$this->logger = Logger::get_instance();
 	}
 
 	/**
@@ -79,7 +71,7 @@ class DataMigrator {
 			return $results;
 		}
 
-		$this->logger->info( 'Starting data migration' );
+		LoggingHelper::info( 'Starting data migration' );
 
 		// Migrer wc_qualiopi_steps
 		if ( $this->plugin_was_active( 'wc_qualiopi_steps' ) ) {
@@ -101,10 +93,10 @@ class DataMigrator {
 		if ( empty( $results['errors'] ) ) {
 			update_option( 'wcqf_migration_completed', true );
 			update_option( 'wcqf_migration_date', current_time( 'mysql' ) );
-			$this->logger->info( 'Migration completed successfully', $results );
+			LoggingHelper::info( 'Migration completed successfully', $results );
 		} else {
 			$results['success'] = false;
-			$this->logger->error( 'Migration completed with errors', $results );
+			LoggingHelper::error( 'Migration completed with errors', $results );
 		}
 
 		return $results;
@@ -131,7 +123,7 @@ class DataMigrator {
 
 				if ( $updated ) {
 					$results['options']++;
-					$this->logger->info( "Migrated option: {$old_key} → {$new_key}" );
+					LoggingHelper::info( "Migrated option: {$old_key} → {$new_key}" );
 				} else {
 					$results['errors'][] = "Failed to migrate option: {$old_key}";
 				}
@@ -170,7 +162,7 @@ class DataMigrator {
 
 				if ( $updated ) {
 					$results['options']++;
-					$this->logger->info( "Migrated option: {$old_key} → {$new_key}" );
+					LoggingHelper::info( "Migrated option: {$old_key} → {$new_key}" );
 				} else {
 					$results['errors'][] = "Failed to migrate option: {$old_key}";
 				}
@@ -256,7 +248,7 @@ class DataMigrator {
 		$result = $wpdb->query( $query );
 
 		if ( false !== $result ) {
-			$this->logger->info( "Migrated {$result} rows from {$old_table} to {$new_table}" );
+			LoggingHelper::info( "Migrated {$result} rows from {$old_table} to {$new_table}" );
 			return true;
 		}
 
@@ -291,7 +283,7 @@ class DataMigrator {
 		delete_option( 'wcqf_migration_completed' );
 		delete_option( 'wcqf_migration_date' );
 
-		$this->logger->info( 'Migration reset' );
+		LoggingHelper::info( 'Migration reset' );
 
 		return true;
 	}

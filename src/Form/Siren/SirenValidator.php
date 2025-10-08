@@ -11,6 +11,7 @@ namespace WcQualiopiFormation\Form\Siren;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de validation des numéros SIRET
@@ -128,23 +129,38 @@ class SirenValidator {
 	 */
 	public function determine_entreprise_type( $unite_legale ) {
 		// DEBUG : Afficher la structure complète reçue
-		error_log( '[WCQF DEBUG] unite_legale keys: ' . implode( ', ', array_keys( $unite_legale ) ) );
-		error_log( '[WCQF DEBUG] unite_legale data: ' . json_encode( $unite_legale, JSON_UNESCAPED_UNICODE ) );
+		LoggingHelper::debug( '[SirenValidator] Analyse unite_legale', array(
+			'keys' => array_keys( $unite_legale ),
+			'data' => $unite_legale
+		) );
 		
 		// Personne morale : a une dénomination.
 		if ( ! empty( $unite_legale['denomination'] ) ) {
-			error_log( '[WCQF DEBUG] Type detecte: pm (denomination presente)' );
+			LoggingHelper::debug( '[SirenValidator] Type détecté', array(
+				'type'   => 'pm',
+				'reason' => 'denomination presente',
+				'value'  => $unite_legale['denomination']
+			) );
 			return 'pm';
 		}
 
 		// Entrepreneur individuel : a un nom et un prénom.
 		if ( ! empty( $unite_legale['nom'] ) && ! empty( $unite_legale['prenom'] ) ) {
-			error_log( '[WCQF DEBUG] Type detecte: ei (nom+prenom presents)' );
+			LoggingHelper::debug( '[SirenValidator] Type détecté', array(
+				'type'   => 'ei',
+				'reason' => 'nom et prenom presents',
+				'nom'    => $unite_legale['nom'],
+				'prenom' => $unite_legale['prenom']
+			) );
 			return 'ei';
 		}
 
 		// Type inconnu.
-		error_log( '[WCQF DEBUG] Type inconnu - denomination: ' . ( $unite_legale['denomination'] ?? 'ABSENT' ) . ', nom: ' . ( $unite_legale['nom'] ?? 'ABSENT' ) . ', prenom: ' . ( $unite_legale['prenom'] ?? 'ABSENT' ) );
+		LoggingHelper::warning( '[SirenValidator] Type entreprise inconnu', array(
+			'denomination' => $unite_legale['denomination'] ?? 'ABSENT',
+			'nom'          => $unite_legale['nom'] ?? 'ABSENT',
+			'prenom'       => $unite_legale['prenom'] ?? 'ABSENT'
+		) );
 		return 'inconnu';
 	}
 

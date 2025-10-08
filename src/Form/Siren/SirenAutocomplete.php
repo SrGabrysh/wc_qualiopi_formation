@@ -12,7 +12,6 @@ defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Security\SecretManager;
-use WcQualiopiFormation\Utils\Logger;
 use WcQualiopiFormation\Helpers\ApiKeyManager;
 use WcQualiopiFormation\Form\Siren\SirenValidator;
 use WcQualiopiFormation\Form\Siren\SirenApiClient;
@@ -31,13 +30,6 @@ use WcQualiopiFormation\Helpers\LoggingHelper;
  * - Détection type entreprise (PM/EI)
  */
 class SirenAutocomplete {
-
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
 
 	/**
 	 * Instance du validator
@@ -76,25 +68,22 @@ class SirenAutocomplete {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger    = $logger;
+	public function __construct() {
 		$this->validator = new SirenValidator();
-		$this->cache     = new SirenCache( $logger );
-		$this->merger    = new SirenDataMerger( $logger, $this->validator );
-		$this->error_handler = new SirenErrorHandler( $logger );
+		$this->cache     = new SirenCache();
+		$this->merger    = new SirenDataMerger( $this->validator );
+		$this->error_handler = new SirenErrorHandler();
 
-		LoggingHelper::log_wp_hook( $this->logger, 'SirenAutocomplete', 'construct_start' );
+		LoggingHelper::debug( '[SirenAutocomplete] Initialized' );
 
 		// Initialiser le client API si clé disponible.
 		$api_key = $this->get_api_key();
 		if ( ! empty( $api_key ) ) {
-			$this->api_client = new SirenApiClient( $logger, $api_key );
-			LoggingHelper::log_api_call( $this->logger, 'SIREN', 'client_initialized' );
+			$this->api_client = new SirenApiClient( $api_key );
+			LoggingHelper::info( '[SirenAutocomplete] API client initialized' );
 		} else {
-			LoggingHelper::log_validation_error( $this->logger, 'api_key', 'missing', 'Aucune clé API trouvée' );
+			LoggingHelper::warning( '[SirenAutocomplete] API key missing' );
 		}
 	}
 
@@ -111,13 +100,13 @@ class SirenAutocomplete {
 	 * @return string|null La clé API ou null si non trouvée.
 	 */
 	private function get_api_key() {
-		$api_key_manager = ApiKeyManager::get_instance( $this->logger );
+		$api_key_manager = ApiKeyManager::get_instance();
 		$api_key = $api_key_manager->get_api_key( 'siren' );
 
 		if ( ! empty( $api_key ) ) {
-			LoggingHelper::log_cache_operation( $this->logger, 'read', 'api_key', 'api_key_manager' );
+			LoggingHelper::debug( '[SirenAutocomplete] API key retrieved from ApiKeyManager' );
 		} else {
-			LoggingHelper::log_validation_error( $this->logger, 'api_key', 'not_found', 'No SIREN API key found (check ApiKeyManager config)' );
+			LoggingHelper::warning( '[SirenAutocomplete] No SIREN API key found (check ApiKeyManager config)' );
 		}
 
 		return $api_key;

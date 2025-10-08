@@ -233,8 +233,7 @@ class Plugin {
 		}
 
 		// [CORRECTION 2025-10-07] Logger pour traçabilité
-		$logger = \WcQualiopiFormation\Utils\Logger::get_instance();
-		$logger->info( '[Plugin] Migration des clés API supprimée pour sécurité - utiliser SecretManager/ApiKeyManager' );
+		\WcQualiopiFormation\Helpers\LoggingHelper::info( '[Plugin] Migration des clés API supprimée pour sécurité - utiliser SecretManager/ApiKeyManager' );
 
 		// [CORRECTION 2025-10-07] Notice admin pour informer de la nouvelle approche
 		\add_action( 'admin_notices', function() {

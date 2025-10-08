@@ -11,7 +11,7 @@ namespace WcQualiopiFormation\Form\MentionsLegales;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsValidator;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsFormatter;
 use WcQualiopiFormation\Helpers\NameFormatter;
@@ -33,14 +33,7 @@ use WcQualiopiFormation\Form\MentionsLegales\EntrepriseTypeDetector;
  */
 class MentionsGenerator {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du validator
 	 *
 	 * @var MentionsValidator
@@ -77,18 +70,15 @@ class MentionsGenerator {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger    = $logger;
+	public function __construct() {
 		$this->validator = new MentionsValidator();
 		$this->formatter = new MentionsFormatter();
 		$this->address_formatter = new AddressFormatter();
 		$this->code_converter = new JuridicalCodeConverter();
 		$this->type_detector = new EntrepriseTypeDetector();
 
-		$this->logger->info( '[MentionsGenerator] __construct DEBUT - Formatter initialise' );
+		LoggingHelper::info( '[MentionsGenerator] __construct DEBUT - Formatter initialise' );
 	}
 
 	/**
@@ -99,20 +89,20 @@ class MentionsGenerator {
 	 * @return string Mentions légales formatées.
 	 */
 	public function generate( $company_data, $representant_data = array() ) {
-		$this->logger->info( '[MentionsGenerator] generate DEBUT', array(
+		LoggingHelper::info( '[MentionsGenerator] generate DEBUT', array(
 			'type' => $company_data['type_entreprise'] ?? 'N/A',
 			'has_representant' => ! empty( $representant_data ),
 			'company_keys' => array_keys( $company_data ),
 		) );
 
 		if ( ! is_array( $company_data ) ) {
-			$this->logger->error( '[MentionsGenerator] ERREUR: Donnees entreprise invalides' );
+			LoggingHelper::error( '[MentionsGenerator] ERREUR: Donnees entreprise invalides' );
 			return '';
 		}
 
 		$type_entreprise = $company_data['type_entreprise'] ?? 'inconnu';
 
-		$this->logger->info( 'Generating mentions legales', array( 'type' => $type_entreprise ) );
+		LoggingHelper::info( 'Generating mentions legales', array( 'type' => $type_entreprise ) );
 
 		$mentions = '';
 
@@ -128,7 +118,7 @@ class MentionsGenerator {
 				break;
 
 			default:
-				$this->logger->warning( 'Unknown company type, using fallback', array( 'type' => $type_entreprise ) );
+				LoggingHelper::warning( 'Unknown company type, using fallback', array( 'type' => $type_entreprise ) );
 				$mentions = $this->generate_fallback( $company_data );
 				break;
 		}
@@ -136,7 +126,7 @@ class MentionsGenerator {
 		// Filtre pour personnalisation.
 		$mentions = apply_filters( 'wcqf_mentions_legales', $mentions, $company_data, $representant_data );
 
-		$this->logger->info( 'Mentions legales generated successfully' );
+		LoggingHelper::info( 'Mentions legales generated successfully' );
 
 		return $mentions;
 	}
@@ -158,7 +148,7 @@ class MentionsGenerator {
 		// Ajouter les informations de représentation si applicable
 		$mentions = $this->add_representation_info( $mentions, $formatted_data );
 
-		$this->logger->info( '[MentionsGenerator] Mentions generees', array(
+		LoggingHelper::info( '[MentionsGenerator] Mentions generees', array(
 			'mentions' => $mentions,
 		) );
 
@@ -187,7 +177,7 @@ class MentionsGenerator {
 			? "{$nom_representant} {$prenom_representant}"
 			: '{REPRESENTANT}';
 
-		$this->logger->info( '[MentionsGenerator] Donnees representant', array(
+		LoggingHelper::info( '[MentionsGenerator] Donnees representant', array(
 			'prenom' => $prenom_representant,
 			'nom' => $nom_representant,
 			'representant' => $representant,
@@ -233,9 +223,9 @@ class MentionsGenerator {
 	private function add_representation_info( $mentions, $data ) {
 		if ( $data['is_societe_capital'] ) {
 			$mentions .= "représentée par {$data['representant']} agissant et ayant les pouvoirs nécessaires";
-			$this->logger->info( '[MentionsGenerator] Representant ajoute aux mentions' );
+			LoggingHelper::info( '[MentionsGenerator] Representant ajoute aux mentions' );
 		} else {
-			$this->logger->warning( '[MentionsGenerator] Forme juridique ne correspond pas a une societe a capital' );
+			LoggingHelper::warning( '[MentionsGenerator] Forme juridique ne correspond pas a une societe a capital' );
 		}
 
 		$mentions .= '.';

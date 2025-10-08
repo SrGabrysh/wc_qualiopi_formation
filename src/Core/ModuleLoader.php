@@ -75,19 +75,18 @@ class ModuleLoader {
 			return;
 		}
 
-		$logger = \WcQualiopiFormation\Utils\Logger::get_instance();
-		$logger->info( '[ModuleLoader] load_admin_modules DEBUT' );
+		\WcQualiopiFormation\Helpers\LoggingHelper::info( '[ModuleLoader] load_admin_modules DEBUT' );
 
 		// Récupérer FormManager depuis les modules partagés
 		$form_manager = $this->modules['form'] ?? null;
 
 		if ( $form_manager ) {
-			$admin_manager = new AdminManager( $logger, $form_manager );
+			$admin_manager = new AdminManager( $form_manager );
 			$admin_manager->init_hooks();
 			$this->modules['admin'] = $admin_manager;
-			$logger->info( '[ModuleLoader] AdminManager initialise avec succes' );
+			\WcQualiopiFormation\Helpers\LoggingHelper::info( '[ModuleLoader] AdminManager initialise avec succes' );
 		} else {
-			$logger->warning( '[ModuleLoader] FormManager non disponible, AdminManager non charge' );
+			\WcQualiopiFormation\Helpers\LoggingHelper::warning( '[ModuleLoader] FormManager non disponible, AdminManager non charge' );
 		}
 	}
 
@@ -98,13 +97,10 @@ class ModuleLoader {
 	 * s'exécuter aussi bien en frontend (soumissions GF) qu'en admin (édition GF).
 	 */
 	private function load_shared_modules(): void {
-		// Logger instance (Singleton)
-		$logger = \WcQualiopiFormation\Utils\Logger::get_instance();
-
 		// Form Manager - Gestion Gravity Forms + SIRET + Tracking
 		// Chargé partout car Gravity Forms peut être soumis en frontend ET admin
 		if ( class_exists( 'GFForms' ) ) {
-			$this->modules['form'] = new \WcQualiopiFormation\Form\FormManager( $logger );
+			$this->modules['form'] = new \WcQualiopiFormation\Form\FormManager();
 		}
 	}
 

@@ -11,6 +11,8 @@
 
 namespace WcQualiopiFormation\Core;
 
+use WcQualiopiFormation\Helpers\LoggingHelper;
+
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -188,14 +190,25 @@ final class Activator {
 		// Run migration
 		$results = $migrator->run_migration();
 		
-		// Log results
+		// Log results (double log pour garantir visibilité pendant activation)
 		if ( $results['success'] ) {
+			// Log structuré pour interface admin
+			LoggingHelper::info( '[Activator] Migration completed', array(
+				'options_migrated' => $results['options_migrated'],
+				'tables_migrated'  => $results['tables_migrated']
+			) );
+			// Log brut pour debug.log (garantit visibilité même si plugin pas encore initialisé)
 			error_log( sprintf(
 				'[WC Qualiopi Formation] Migration completed: %d options, %d tables migrated',
 				$results['options_migrated'],
 				$results['tables_migrated']
 			) );
 		} else {
+			// Log structuré pour interface admin
+			LoggingHelper::error( '[Activator] Migration completed with errors', array(
+				'errors' => $results['errors']
+			) );
+			// Log brut pour debug.log
 			error_log( sprintf(
 				'[WC Qualiopi Formation] Migration completed with errors: %s',
 				implode( ', ', $results['errors'] )

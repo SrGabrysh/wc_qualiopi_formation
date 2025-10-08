@@ -10,7 +10,7 @@
 
 namespace WcQualiopiFormation\Cart;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -32,21 +32,12 @@ class CartRestrictionRenderer {
 	private $config;
 
 	/**
-	 * Logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Constructeur
 	 * 
-	 * @param array  $config Configuration
-	 * @param Logger $logger Instance du logger
+	 * @param array $config Configuration
 	 */
-	public function __construct( array $config, Logger $logger ) {
+	public function __construct( array $config ) {
 		$this->config = $config;
-		$this->logger = $logger;
 	}
 
 	/**
@@ -85,7 +76,7 @@ class CartRestrictionRenderer {
 			$this->render_fallback_notice( $message );
 		}
 
-		$this->logger->debug( 'CartRestriction: Rendered error notice', [
+		LoggingHelper::debug( 'CartRestriction: Rendered error notice', [
 			'cart_qty' => $cart_qty,
 		] );
 	}

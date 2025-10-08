@@ -15,11 +15,10 @@
 namespace WcQualiopiFormation\Cart;
 
 use WcQualiopiFormation\Core\Plugin;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Utils\Mapping;
 use WcQualiopiFormation\Cart\Helpers\PageDetector;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
-use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Cart\Helpers\UrlGenerator;
 
 // Security: Exit if accessed directly
@@ -41,14 +40,7 @@ class CartGuard {
 	 */
 	private static $instance = null;
 
-	/**
-	 * Instance du logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du validateur de tests
 	 * 
 	 * @var TestValidator
@@ -92,10 +84,9 @@ class CartGuard {
 	 * Constructeur privé (singleton)
 	 */
 	private function __construct() {
-		$this->logger = Logger::get_instance();
-		$this->test_validator = new TestValidator( $this->logger );
-		$this->cart_blocker = new CartBlocker( $this->logger, $this->test_validator );
-		$this->cart_renderer = new CartRenderer( $this->logger );
+		$this->test_validator = new TestValidator();
+		$this->cart_blocker = new CartBlocker( $this->test_validator );
+		$this->cart_renderer = new CartRenderer();
 		$this->cart_assets = new CartAssets();
 
 		$this->init_hooks();
@@ -106,7 +97,7 @@ class CartGuard {
 	 * CORRECTION EXPERTS: Hooks multiples + garde serveur universelle
 	 */
 	private function init_hooks(): void {
-		LoggingHelper::log_wp_hook( $this->logger, 'CartGuard', 'init_hooks' );
+		LoggingHelper::log_wp_hook( null, 'CartGuard', 'init_hooks' );
 
 		// 1) Garde universelle par redirection (classique + Blocks)
 		add_action( 'template_redirect', [ $this, 'guard_template_redirect' ], 0 );
@@ -137,7 +128,7 @@ class CartGuard {
 		// Modification du bouton pour WooCommerce Blocks (JavaScript)
 		add_action( 'wp_footer', [ $this, 'modify_checkout_button_blocks' ] );
 
-		LoggingHelper::log_wp_hook( $this->logger, 'CartGuard', 'hooks_registered' );
+		LoggingHelper::log_wp_hook( null, 'CartGuard', 'hooks_registered' );
 	}
 
 	/**
@@ -190,7 +181,7 @@ class CartGuard {
 			return;
 		}
 
-		LoggingHelper::log_wp_hook( $this->logger, 'CartGuard', 'blocking_checkout' );
+		LoggingHelper::log_wp_hook( null, 'CartGuard', 'blocking_checkout' );
 
 		// Supprimer le bouton checkout par défaut
 		remove_action( 'woocommerce_proceed_to_checkout', 'woocommerce_button_proceed_to_checkout', 20 );
@@ -359,6 +350,6 @@ class CartGuard {
 	 */
 	public function clear_cache(): void {
 		Mapping::clear_cache();
-		LoggingHelper::log_cache_operation( $this->logger, 'clear', 'CartGuard' );
+		LoggingHelper::log_cache_operation( null, 'clear', 'CartGuard' );
 	}
 }

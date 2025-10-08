@@ -29,7 +29,7 @@ final class Constants {
 	 * [CORRECTION 2025-10-07] Aligné sur WCQF_VERSION (SSOT)
 	 * @deprecated Utiliser WCQF_VERSION à la place
 	 */
-	const VERSION = '1.0.2';
+	const VERSION = '1.1.0-dev.0';
 
 	/**
 	 * Database table names

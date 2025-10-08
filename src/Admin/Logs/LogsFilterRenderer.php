@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Logs;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Admin\AdminUi;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,14 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LogsFilterRenderer {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du filter manager
 	 *
 	 * @var LogsFilterManager
@@ -39,11 +32,9 @@ class LogsFilterRenderer {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger            $logger Instance du logger.
 	 * @param LogsFilterManager $filter_manager Instance du filter manager.
 	 */
-	public function __construct( Logger $logger, LogsFilterManager $filter_manager ) {
-		$this->logger = $logger;
+	public function __construct( $filter_manager ) {
 		$this->filter_manager = $filter_manager;
 	}
 

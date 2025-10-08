@@ -15,6 +15,7 @@ namespace WcQualiopiFormation\Security;
 
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Security\Token\TokenGenerator;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -212,10 +213,15 @@ class TokenManager {
 	private static function get_secret(): string {
 		$secret = SecretManager::get( self::SECRET_HMAC_KEY, null, true );
 		
-		// If no secret exists, generate one (auto-configuration)
+		// If no secret exists, generate one (auto-configuration, double log pour garantir visibilité)
 		if ( null === $secret ) {
 			$secret = SecretManager::generate_hmac_key();
 			update_option( strtolower( self::SECRET_HMAC_KEY ), $secret, false );
+			// Log structuré pour interface admin
+			LoggingHelper::critical( '[TokenManager] HMAC key auto-generated', array(
+				'recommendation' => 'Define WCQF_HMAC_KEY in wp-config.php for better security'
+			) );
+			// Log brut pour garantir visibilité maximale
 			error_log( 'WCQF Security Warning: HMAC key auto-generated. Define WCQF_HMAC_KEY in wp-config.php for better security.' );
 		}
 		

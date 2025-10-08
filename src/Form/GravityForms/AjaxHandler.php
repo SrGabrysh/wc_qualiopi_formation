@@ -11,7 +11,6 @@ namespace WcQualiopiFormation\Form\GravityForms;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
 use WcQualiopiFormation\Form\Siren\SirenAutocomplete;
 use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsGenerator;
@@ -32,13 +31,6 @@ use WcQualiopiFormation\Helpers\AjaxHelper;
  * - Mapping données vers champs GF
  */
 class AjaxHandler {
-
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
 
 	/**
 	 * Instance SirenAutocomplete
@@ -64,12 +56,10 @@ class AjaxHandler {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger              $logger Instance du logger.
 	 * @param SirenAutocomplete   $siren_autocomplete Instance SirenAutocomplete.
 	 * @param MentionsGenerator   $mentions_generator Instance MentionsGenerator.
 	 */
-	public function __construct( Logger $logger, SirenAutocomplete $siren_autocomplete, MentionsGenerator $mentions_generator ) {
-		$this->logger             = $logger;
+	public function __construct( SirenAutocomplete $siren_autocomplete, MentionsGenerator $mentions_generator ) {
 		$this->siren_autocomplete = $siren_autocomplete;
 		$this->field_mapper       = new FieldMapper();
 		$this->mentions_generator = $mentions_generator;
@@ -83,14 +73,14 @@ class AjaxHandler {
 		add_action( 'wp_ajax_wcqf_verify_siret', array( $this, 'handle_verify_siret' ) );
 		add_action( 'wp_ajax_nopriv_wcqf_verify_siret', array( $this, 'handle_verify_siret' ) );
 		
-		$this->logger->info( '[DEBUG AjaxHandler] Hooks AJAX enregistres pour wcqf_verify_siret' );
+		LoggingHelper::info( '[AjaxHandler] Hooks AJAX enregistres pour wcqf_verify_siret' );
 	}
 
 	/**
 	 * Gère la requête AJAX de vérification SIRET
 	 */
 	public function handle_verify_siret() {
-		LoggingHelper::log_ajax_request( $this->logger, 'handle_verify_siret', array(
+		LoggingHelper::log_ajax_request( null, 'handle_verify_siret', array(
 			'_POST_keys' => array_keys( $_POST ),
 			'_POST' => $_POST,
 		) );
@@ -98,7 +88,7 @@ class AjaxHandler {
 		// Vérification nonce.
 		$nonce_validation = ValidationHelper::validate_nonce( $_POST['nonce'] ?? '', 'wcqf_verify_siret' );
 		if ( ! $nonce_validation['valid'] ) {
-			LoggingHelper::log_validation_error( $this->logger, 'nonce', $_POST['nonce'] ?? '', $nonce_validation['error'] );
+			LoggingHelper::log_validation_error( null, 'nonce', $_POST['nonce'] ?? '', $nonce_validation['error'] );
 			AjaxHelper::send_nonce_error( $nonce_validation['error'] );
 		}
 
@@ -110,7 +100,7 @@ class AjaxHandler {
 		$telephone = isset( $_POST['telephone'] ) ? sanitize_text_field( wp_unslash( $_POST['telephone'] ) ) : '';
 		$email     = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
 
-		LoggingHelper::log_ajax_request( $this->logger, 'parametres_extraits', array(
+		LoggingHelper::log_ajax_request( null, 'parametres_extraits', array(
 			'form_id' => $form_id,
 			'siret' => $siret,
 			'prenom' => $prenom,
@@ -132,7 +122,7 @@ class AjaxHandler {
 
 		$params_validation = ValidationHelper::validate_ajax_params( $required_params, $params_data );
 		if ( ! $params_validation['valid'] ) {
-			LoggingHelper::log_validation_error( $this->logger, 'ajax_params', $params_data, $params_validation['error'] );
+			LoggingHelper::log_validation_error( null, 'ajax_params', $params_data, $params_validation['error'] );
 			AjaxHelper::send_missing_params_error( $params_validation['missing'], $params_validation['error'] );
 		}
 
@@ -141,7 +131,7 @@ class AjaxHandler {
 		$prenom_result = NameFormatter::format( $prenom );
 
 		if ( ! $nom_result['valid'] ) {
-			$this->logger->warning( '[AJAX] Nom invalide', array(
+			LoggingHelper::warning( '[AJAX] Nom invalide', array(
 				'nom' => $nom,
 				'error' => $nom_result['error'],
 			) );
@@ -149,7 +139,7 @@ class AjaxHandler {
 		}
 
 		if ( ! $prenom_result['valid'] ) {
-			$this->logger->warning( '[AJAX] Prenom invalide', array(
+			LoggingHelper::warning( '[AJAX] Prenom invalide', array(
 				'prenom' => $prenom,
 				'error' => $prenom_result['error'],
 			) );
@@ -160,7 +150,7 @@ class AjaxHandler {
 		$nom_formate = NameFormatter::format_nom( $nom );
 		$prenom_formate = NameFormatter::format_prenom( $prenom );
 
-		$this->logger->info( '[AJAX] Noms/prenoms valides et formates', array(
+		LoggingHelper::info( '[AJAX] Noms/prenoms valides et formates', array(
 			'prenom_avant' => $prenom,
 			'prenom_apres' => $prenom_formate,
 			'nom_avant' => $nom,
@@ -173,13 +163,13 @@ class AjaxHandler {
 		
 		// Formatage téléphone (champ ID '9') - OBLIGATOIRE
 		if ( ! empty( $telephone ) ) {
-			$this->logger->info( '[AJAX] Formatage téléphone demandé', array(
+			LoggingHelper::info( '[AJAX] Formatage téléphone demandé', array(
 				'telephone_input' => $telephone,
 			) );
 
 			$telephone_result = PhoneFormatter::format( $telephone );
 
-			$this->logger->debug( '[AJAX] Résultat formatage téléphone', array(
+			LoggingHelper::debug( '[AJAX] Résultat formatage téléphone', array(
 				'input' => $telephone,
 				'result_valid' => $telephone_result['valid'],
 				'result_value' => $telephone_result['value'],
@@ -187,7 +177,7 @@ class AjaxHandler {
 			) );
 
 			if ( ! $telephone_result['valid'] ) {
-				$this->logger->warning( '[AJAX] Téléphone invalide - Envoi erreur validation', array(
+				LoggingHelper::warning( '[AJAX] Téléphone invalide - Envoi erreur validation', array(
 					'telephone' => $telephone,
 					'error' => $telephone_result['error'],
 				) );
@@ -196,26 +186,26 @@ class AjaxHandler {
 
 			$telephone_formate = $telephone_result['value'];
 
-			$this->logger->info( '[AJAX] Téléphone formaté avec succès', array(
+			LoggingHelper::info( '[AJAX] Téléphone formaté avec succès', array(
 				'telephone_avant' => $telephone,
 				'telephone_apres' => $telephone_formate,
 			) );
 		} else {
 			// Téléphone vide = déjà géré par validate_ajax_params() mais log pour traçabilité
-			$this->logger->warning( '[AJAX] Téléphone vide - Bloqué par validation paramètres requis', array(
+			LoggingHelper::warning( '[AJAX] Téléphone vide - Bloqué par validation paramètres requis', array(
 				'telephone' => $telephone,
 			) );
 		}
 
 		// Validation email (champ ID '10') - OBLIGATOIRE
 		if ( ! empty( $email ) ) {
-			$this->logger->info( '[AJAX] Validation email demandée', array(
+			LoggingHelper::info( '[AJAX] Validation email demandée', array(
 				'email_input' => $email,
 			) );
 
 			$email_result = SanitizationHelper::validate_email_rfc( $email );
 
-			$this->logger->debug( '[AJAX] Résultat validation email', array(
+			LoggingHelper::debug( '[AJAX] Résultat validation email', array(
 				'input' => $email,
 				'result_valid' => $email_result['valid'],
 				'result_value' => $email_result['value'],
@@ -223,7 +213,7 @@ class AjaxHandler {
 			) );
 
 			if ( ! $email_result['valid'] ) {
-				$this->logger->warning( '[AJAX] Email invalide - Envoi erreur validation', array(
+				LoggingHelper::warning( '[AJAX] Email invalide - Envoi erreur validation', array(
 					'email' => $email,
 					'error' => $email_result['error'],
 				) );
@@ -232,13 +222,13 @@ class AjaxHandler {
 
 			$email_formate = $email_result['value'];
 
-			$this->logger->info( '[AJAX] Email validé avec succès', array(
+			LoggingHelper::info( '[AJAX] Email validé avec succès', array(
 				'email_avant' => $email,
 				'email_apres' => $email_formate,
 			) );
 		} else {
 			// Email vide = déjà géré par validate_ajax_params() mais log pour traçabilité
-			$this->logger->warning( '[AJAX] Email vide - Bloqué par validation paramètres requis', array(
+			LoggingHelper::warning( '[AJAX] Email vide - Bloqué par validation paramètres requis', array(
 				'email' => $email,
 			) );
 		}
@@ -249,14 +239,14 @@ class AjaxHandler {
 		}
 
 		// Appeler l'API SIREN.
-		$this->logger->info( '[AJAX] Appel SirenAutocomplete::get_company_data', array(
+		LoggingHelper::info( '[AJAX] Appel SirenAutocomplete::get_company_data', array(
 			'siret' => $siret,
 		) );
 
 		$company_data = $this->siren_autocomplete->get_company_data( $siret );
 
 		if ( is_wp_error( $company_data ) ) {
-			$this->logger->error( '[AJAX] ERREUR SIREN API', array(
+			LoggingHelper::error( '[AJAX] ERREUR SIREN API', array(
 				'siret'   => $siret,
 				'error_code' => $company_data->get_error_code(),
 				'error_message'   => $company_data->get_error_message(),
@@ -265,7 +255,7 @@ class AjaxHandler {
 			AjaxHelper::send_api_error( 'SIREN', $company_data->get_error_message() );
 		}
 
-		$this->logger->info( '[AJAX] DONNEES ENTREPRISE RECUPEREES', array(
+		LoggingHelper::info( '[AJAX] DONNEES ENTREPRISE RECUPEREES', array(
 			'siret' => $siret,
 			'company_data_keys' => array_keys( $company_data ),
 			'company_data' => $company_data,
@@ -275,11 +265,11 @@ class AjaxHandler {
 		$mapping = $this->field_mapper->get_field_mapping( $form_id );
 		
 		if ( false === $mapping ) {
-			$this->logger->error( '[AJAX] ERREUR: Aucun mapping trouve pour le formulaire', array( 'form_id' => $form_id ) );
+			LoggingHelper::error( '[AJAX] ERREUR: Aucun mapping trouve pour le formulaire', array( 'form_id' => $form_id ) );
 			AjaxHelper::send_error( __( 'Aucun mapping configuré pour ce formulaire.', Constants::TEXT_DOMAIN ), 'no_mapping' );
 		}
 
-		$this->logger->info( '[AJAX] Mapping recupere', array(
+		LoggingHelper::info( '[AJAX] Mapping recupere', array(
 			'form_id' => $form_id,
 			'mapping_keys' => array_keys( $mapping ),
 		) );
@@ -292,19 +282,19 @@ class AjaxHandler {
 			'email'     => $email_formate,
 		);
 
-		$this->logger->info( '[AJAX] Representant prepare', array(
+		LoggingHelper::info( '[AJAX] Representant prepare', array(
 			'representant' => $representant,
 		) );
 
 		// Générer les mentions légales.
-		$this->logger->info( '[AJAX] Appel MentionsGenerator::generate', array(
+		LoggingHelper::info( '[AJAX] Appel MentionsGenerator::generate', array(
 			'company_data' => $company_data,
 			'representant' => $representant,
 		) );
 
 		$mentions = $this->mentions_generator->generate( $company_data, $representant );
 
-		$this->logger->info( '[AJAX] MENTIONS LEGALES GENEREES', array(
+		LoggingHelper::info( '[AJAX] MENTIONS LEGALES GENEREES', array(
 			'mentions_length' => strlen( $mentions ),
 			'mentions' => $mentions,
 		) );
@@ -312,7 +302,7 @@ class AjaxHandler {
 		// Mapper les données vers les champs du formulaire (avec mentions).
 		$mapped_data = $this->field_mapper->map_data_to_fields( $company_data, $mapping, $mentions );
 
-		$this->logger->info( '[AJAX] DONNEES MAPPEES FINALES', array(
+		LoggingHelper::info( '[AJAX] DONNEES MAPPEES FINALES', array(
 			'mapped_data_keys' => array_keys( $mapped_data ),
 			'mapped_data' => $mapped_data,
 		) );
@@ -334,7 +324,7 @@ class AjaxHandler {
 			'representant'     => $representant, // NOMS FORMATÉS pour réinjection frontend.
 		);
 
-		$this->logger->info( '[AJAX] Reponse finale envoyee au frontend', array(
+		LoggingHelper::info( '[AJAX] Reponse finale envoyee au frontend', array(
 			'has_representant' => ! empty( $response['representant'] ),
 			'representant_prenom' => $response['representant']['prenom'] ?? '',
 			'representant_nom' => $response['representant']['nom'] ?? '',

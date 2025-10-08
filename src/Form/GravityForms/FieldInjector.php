@@ -13,7 +13,7 @@ defined( 'ABSPATH' ) || exit;
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Security\TokenManager;
 use WcQualiopiFormation\Security\SessionManager;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 
 /**
@@ -27,13 +27,6 @@ use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 class FieldInjector {
 
 	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Instance du field mapper
 	 *
 	 * @var FieldMapper
@@ -42,11 +35,8 @@ class FieldInjector {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger       = $logger;
+	public function __construct() {
 		$this->field_mapper = new FieldMapper();
 	}
 
@@ -85,7 +75,7 @@ class FieldInjector {
 		$token = $this->get_or_create_token();
 
 		if ( empty( $token ) ) {
-			$this->logger->error( 'Failed to generate token for form', array( 'form_id' => $form['id'] ) );
+			LoggingHelper::error( 'Failed to generate token for form', array( 'form_id' => $form['id'] ) );
 			return $form;
 		}
 
@@ -102,7 +92,7 @@ class FieldInjector {
 		// Ajouter le champ au formulaire.
 		$form['fields'][] = \GF_Fields::create( $token_field );
 
-		$this->logger->info( 'Token field injected', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+		LoggingHelper::info( 'Token field injected', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
 
 		return $form;
 	}
@@ -198,6 +188,15 @@ class FieldInjector {
 			true
 		);
 
+		// Enqueue JS debug pour transitions de pages (développement).
+		wp_enqueue_script(
+			'wcqf-page-debug',
+			plugin_dir_url( dirname( dirname( dirname( __FILE__ ) ) ) ) . 'assets/js/page-transition-debug.js',
+			array( 'jquery' ),
+			WCQF_VERSION,
+			true
+		);
+
 		// Localiser le script avec les données nécessaires.
 		wp_localize_script(
 			'wcqf-form-frontend',
@@ -265,7 +264,7 @@ class FieldInjector {
 		// Enregistrer en session (méthode statique).
 		SessionManager::set( Constants::SESSION_KEY_TOKEN, $token, Constants::SESSION_TTL_MINUTES * MINUTE_IN_SECONDS );
 
-		$this->logger->info( 'New token created', array(
+		LoggingHelper::info( 'New token created', array(
 			'user_id'    => $user_id,
 			'product_id' => $product_id,
 		) );

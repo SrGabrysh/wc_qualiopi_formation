@@ -17,6 +17,7 @@ namespace WcQualiopiFormation\Security;
 
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Security\Secret\SecretValidator;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use Exception;
 
 defined( 'ABSPATH' ) || exit;
@@ -77,8 +78,14 @@ class SecretManager {
 		if ( $allow_option ) {
 			$value = self::get_from_option( $key );
 			if ( null !== $value ) {
-				// Warning si secret critique stocké en option
+				// Warning si secret critique stocké en option (double log pour garantir visibilité)
 				if ( SecretValidator::is_critical( $key ) ) {
+					// Log structuré pour interface admin
+					LoggingHelper::critical( '[SecretManager] Critical secret in WordPress option', array(
+						'secret_name'    => $key,
+						'recommendation' => 'Use environment variable or wp-config constant instead'
+					) );
+					// Log brut pour garantir visibilité maximale
 					error_log( sprintf(
 						'WCQF Security Warning: Critical secret %s retrieved from WordPress option. Use environment variable or wp-config constant instead.',
 						$key

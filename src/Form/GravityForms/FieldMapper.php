@@ -14,7 +14,6 @@ use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Helpers\DataHelper;
 use WcQualiopiFormation\Helpers\SiretFormatter;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsHelper;
-use WcQualiopiFormation\Utils\Logger;
 use WcQualiopiFormation\Form\GravityForms\FieldFormatter;
 use WcQualiopiFormation\Form\GravityForms\RepresentantExtractor;
 use WcQualiopiFormation\Helpers\LoggingHelper;
@@ -28,13 +27,6 @@ use WcQualiopiFormation\Helpers\LoggingHelper;
  * - Extraction données représentant légal
  */
 class FieldMapper {
-
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
 
 	/**
 	 * Instance du formatter
@@ -76,9 +68,8 @@ class FieldMapper {
 	 * Constructeur
 	 */
 	public function __construct() {
-		$this->logger = Logger::get_instance();
-		$this->formatter = new FieldFormatter( $this->logger );
-		$this->extractor = new RepresentantExtractor( $this->logger );
+		$this->formatter = new FieldFormatter();
+		$this->extractor = new RepresentantExtractor();
 	}
 
 	/**
@@ -88,18 +79,18 @@ class FieldMapper {
 	 * @return array Le mapping ou tableau vide.
 	 */
 	public function get_field_mapping( $form_id ) {
-		$this->logger->debug( '[FieldMapper] get_field_mapping DEBUT', array( 'form_id' => $form_id ) );
+		LoggingHelper::debug( '[FieldMapper] get_field_mapping DEBUT', array( 'form_id' => $form_id ) );
 
 		$settings = get_option( Constants::OPTION_SETTINGS, array() );
 		$mappings = $settings['form_mappings'] ?? array();
 
-		$this->logger->debug( '[FieldMapper] Settings recuperes', array(
+		LoggingHelper::debug( '[FieldMapper] Settings recuperes', array(
 			'has_form_mappings' => isset( $settings['form_mappings'] ),
 			'mappings_count' => count( $mappings ),
 		) );
 
 		if ( isset( $mappings[ $form_id ] ) ) {
-			LoggingHelper::log_mapping_operation( $this->logger, 'get', 'custom_mapping', 'found', array(
+			LoggingHelper::log_mapping_operation( null, 'get', 'custom_mapping', 'found', array(
 				'form_id' => $form_id,
 				'mapping_keys' => array_keys( $mappings[ $form_id ] ),
 			) );
@@ -108,11 +99,11 @@ class FieldMapper {
 
 		// Fallback sur mapping par défaut pour Form ID 1.
 		if ( 1 === $form_id ) {
-			LoggingHelper::log_mapping_operation( $this->logger, 'get', 'default_mapping', 'form_id_1' );
+			LoggingHelper::log_mapping_operation( null, 'get', 'default_mapping', 'form_id_1' );
 			return self::DEFAULT_MAPPING;
 		}
 
-		LoggingHelper::log_validation_error( $this->logger, 'mapping', $form_id, 'Aucun mapping trouvé pour ce formulaire' );
+		LoggingHelper::log_validation_error( null, 'mapping', $form_id, 'Aucun mapping trouvé pour ce formulaire' );
 		return array();
 	}
 
@@ -124,7 +115,7 @@ class FieldMapper {
 	 * @return bool True si succès.
 	 */
 	public function save_field_mapping( $form_id, $mapping ) {
-		LoggingHelper::log_mapping_operation( $this->logger, 'save', 'field_mapping', 'start', array(
+		LoggingHelper::log_mapping_operation( null, 'save', 'field_mapping', 'start', array(
 			'form_id' => $form_id,
 			'mapping_fields' => array_keys( $mapping ),
 		) );
@@ -139,7 +130,7 @@ class FieldMapper {
 
 		$result = update_option( Constants::OPTION_SETTINGS, $settings );
 
-		LoggingHelper::log_mapping_operation( $this->logger, 'save', 'field_mapping', 'success', array(
+		LoggingHelper::log_mapping_operation( null, 'save', 'field_mapping', 'success', array(
 			'form_id' => $form_id,
 			'success' => $result,
 		) );
@@ -156,7 +147,7 @@ class FieldMapper {
 	 * @return array Données mappées pour le formulaire.
 	 */
 	public function map_data_to_fields( $company_data, $mapping, $mentions_legales = '' ) {
-		LoggingHelper::log_mapping_operation( $this->logger, 'map', 'data_to_fields', 'start', array(
+		LoggingHelper::log_mapping_operation( null, 'map', 'data_to_fields', 'start', array(
 			'company_data_keys' => array_keys( $company_data ),
 			'mapping_keys' => array_keys( $mapping ),
 			'has_mentions' => ! empty( $mentions_legales ),
@@ -176,7 +167,7 @@ class FieldMapper {
 		// Mapper les mentions légales
 		$mapped_data = $this->map_mentions_legales( $mentions_legales, $mapping, $mapped_data );
 
-		LoggingHelper::log_mapping_operation( $this->logger, 'map', 'data_to_fields', 'success', array(
+		LoggingHelper::log_mapping_operation( null, 'map', 'data_to_fields', 'success', array(
 			'mapped_fields_count' => count( $mapped_data ),
 			'field_ids' => array_keys( $mapped_data ),
 		) );
@@ -197,7 +188,7 @@ class FieldMapper {
 		if ( ! empty( $mapping['siret'] ) && ! empty( $company_data['siret'] ) ) {
 			$siret_formatted = SiretFormatter::format_siret( $company_data['siret'] );
 			$mapped_data[ $mapping['siret'] ] = $siret_formatted;
-			$this->logger->debug( '[FieldMapper] SIRET mappe', array(
+			LoggingHelper::debug( '[FieldMapper] SIRET mappe', array(
 				'field_id' => $mapping['siret'],
 				'value' => $siret_formatted,
 			) );
@@ -206,7 +197,7 @@ class FieldMapper {
 		// Dénomination.
 		if ( ! empty( $mapping['denomination'] ) && ! empty( $company_data['denomination'] ) ) {
 			$mapped_data[ $mapping['denomination'] ] = $company_data['denomination'];
-			$this->logger->debug( '[FieldMapper] Denomination mappee', array(
+			LoggingHelper::debug( '[FieldMapper] Denomination mappee', array(
 				'field_id' => $mapping['denomination'],
 				'value' => $company_data['denomination'],
 			) );
@@ -216,7 +207,7 @@ class FieldMapper {
 		$representant = $company_data['representant'] ?? array();
 		if ( ! empty( $mapping['telephone'] ) && ! empty( $representant['telephone'] ) ) {
 			$mapped_data[ $mapping['telephone'] ] = $representant['telephone'];
-			$this->logger->debug( '[FieldMapper] Téléphone mappé', array(
+			LoggingHelper::debug( '[FieldMapper] Téléphone mappé', array(
 				'field_id' => $mapping['telephone'],
 				'value' => $representant['telephone'],
 			) );
@@ -225,7 +216,7 @@ class FieldMapper {
 		// Email validé RFC (depuis representant).
 		if ( ! empty( $mapping['email'] ) && ! empty( $representant['email'] ) ) {
 			$mapped_data[ $mapping['email'] ] = $representant['email'];
-			$this->logger->debug( '[FieldMapper] Email mappé', array(
+			LoggingHelper::debug( '[FieldMapper] Email mappé', array(
 				'field_id' => $mapping['email'],
 				'value' => $representant['email'],
 			) );
@@ -247,7 +238,7 @@ class FieldMapper {
 		if ( ! empty( $mapping['adresse'] ) ) {
 			$adresse = $this->formatter->format_adresse_sans_cp_ville( $company_data );
 			$mapped_data[ $mapping['adresse'] ] = $adresse;
-			$this->logger->debug( '[FieldMapper] Adresse mappee', array(
+			LoggingHelper::debug( '[FieldMapper] Adresse mappee', array(
 				'field_id' => $mapping['adresse'],
 				'value' => $adresse,
 			) );
@@ -256,7 +247,7 @@ class FieldMapper {
 		// Code postal.
 		if ( ! empty( $mapping['code_postal'] ) && ! empty( $company_data['adresse_cp'] ) ) {
 			$mapped_data[ $mapping['code_postal'] ] = $company_data['adresse_cp'];
-			$this->logger->debug( '[FieldMapper] Code postal mappe', array(
+			LoggingHelper::debug( '[FieldMapper] Code postal mappe', array(
 				'field_id' => $mapping['code_postal'],
 				'value' => $company_data['adresse_cp'],
 			) );
@@ -265,7 +256,7 @@ class FieldMapper {
 		// Ville.
 		if ( ! empty( $mapping['ville'] ) && ! empty( $company_data['adresse_ville'] ) ) {
 			$mapped_data[ $mapping['ville'] ] = $company_data['adresse_ville'];
-			$this->logger->debug( '[FieldMapper] Ville mappee', array(
+			LoggingHelper::debug( '[FieldMapper] Ville mappee', array(
 				'field_id' => $mapping['ville'],
 				'value' => $company_data['adresse_ville'],
 			) );
@@ -286,7 +277,7 @@ class FieldMapper {
 		// Forme juridique - Avec formatage via MentionsHelper.
 		if ( ! empty( $mapping['forme_juridique'] ) && ! empty( $company_data['forme_juridique'] ) ) {
 			$mapped_data[ $mapping['forme_juridique'] ] = $this->formatter->format_forme_juridique( $company_data['forme_juridique'] );
-			$this->logger->debug( '[FieldMapper] Forme juridique mappee', array(
+			LoggingHelper::debug( '[FieldMapper] Forme juridique mappee', array(
 				'field_id' => $mapping['forme_juridique'],
 				'raw' => $company_data['forme_juridique'],
 			) );
@@ -295,26 +286,26 @@ class FieldMapper {
 		// Code APE (pas fourni par API SIREN actuellement).
 		if ( ! empty( $mapping['code_ape'] ) ) {
 			$mapped_data[ $mapping['code_ape'] ] = ''; // TODO: Ajouter si disponible dans API.
-			$this->logger->debug( '[FieldMapper] Code APE non disponible' );
+			LoggingHelper::debug( '[FieldMapper] Code APE non disponible' );
 		}
 
 		// Libellé APE (pas fourni par API SIREN actuellement).
 		if ( ! empty( $mapping['libelle_ape'] ) ) {
 			$mapped_data[ $mapping['libelle_ape'] ] = ''; // TODO: Ajouter si disponible dans API.
-			$this->logger->debug( '[FieldMapper] Libelle APE non disponible' );
+			LoggingHelper::debug( '[FieldMapper] Libelle APE non disponible' );
 		}
 
 		// Date de création (pas fournie par API SIREN actuellement).
 		if ( ! empty( $mapping['date_creation'] ) ) {
 			$mapped_data[ $mapping['date_creation'] ] = ''; // TODO: Ajouter si disponible dans API.
-			$this->logger->debug( '[FieldMapper] Date creation non disponible' );
+			LoggingHelper::debug( '[FieldMapper] Date creation non disponible' );
 		}
 
 		// Statut actif/inactif.
 		if ( ! empty( $mapping['statut_actif'] ) ) {
 			$statut = $this->formatter->format_statut_actif( $company_data['is_active'] ?? true );
 			$mapped_data[ $mapping['statut_actif'] ] = $statut;
-			$this->logger->debug( '[FieldMapper] Statut actif mappe', array(
+			LoggingHelper::debug( '[FieldMapper] Statut actif mappe', array(
 				'field_id' => $mapping['statut_actif'],
 				'value' => $statut,
 			) );
@@ -324,7 +315,7 @@ class FieldMapper {
 		if ( ! empty( $mapping['type_entreprise'] ) ) {
 			$type_label = $this->formatter->get_type_entreprise_label( $company_data['type_entreprise'] ?? '' );
 			$mapped_data[ $mapping['type_entreprise'] ] = $type_label;
-			$this->logger->debug( '[FieldMapper] Type entreprise mappe', array(
+			LoggingHelper::debug( '[FieldMapper] Type entreprise mappe', array(
 				'field_id' => $mapping['type_entreprise'],
 				'type_label' => $type_label,
 			) );
@@ -345,7 +336,7 @@ class FieldMapper {
 		// Mentions légales.
 		if ( ! empty( $mapping['mentions_legales'] ) && ! empty( $mentions_legales ) ) {
 			$mapped_data[ $mapping['mentions_legales'] ] = $mentions_legales;
-			$this->logger->debug( '[FieldMapper] Mentions legales mappees', array(
+			LoggingHelper::debug( '[FieldMapper] Mentions legales mappees', array(
 				'field_id' => $mapping['mentions_legales'],
 				'length' => strlen( $mentions_legales ),
 			) );
@@ -375,7 +366,7 @@ class FieldMapper {
 		$mapping = $this->get_field_mapping( $form_id );
 		$has_mapping = ! empty( $mapping['siret'] );
 
-		$this->logger->debug( '[FieldMapper] form_has_mapping', array(
+		LoggingHelper::debug( '[FieldMapper] form_has_mapping', array(
 			'form_id' => $form_id,
 			'has_mapping' => $has_mapping,
 		) );
@@ -398,7 +389,7 @@ class FieldMapper {
 
 		$siret_field_id = $mapping['siret'] ?? false;
 
-		$this->logger->debug( '[FieldMapper] get_siret_field_id', array(
+		LoggingHelper::debug( '[FieldMapper] get_siret_field_id', array(
 			'form_id' => $form_id,
 			'siret_field_id' => $siret_field_id,
 		) );
@@ -417,7 +408,7 @@ class FieldMapper {
 
 		$form_ids = array_keys( $mappings );
 
-		$this->logger->debug( '[FieldMapper] get_mapped_forms', array(
+		LoggingHelper::debug( '[FieldMapper] get_mapped_forms', array(
 			'count' => count( $form_ids ),
 			'form_ids' => $form_ids,
 		) );

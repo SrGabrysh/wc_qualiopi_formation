@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Form\FormManager;
 use WcQualiopiFormation\Admin\Logs\LogsActionHandler;
 use WcQualiopiFormation\Admin\Logs\LogsDataProvider;
@@ -31,14 +31,7 @@ class AdminManager {
 	 */
 	private $form_manager;
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance de la page de configuration
 	 *
 	 * @var SettingsPage
@@ -56,16 +49,14 @@ class AdminManager {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger      $logger Instance du logger.
 	 * @param FormManager $form_manager Instance du Form Manager.
 	 */
-	public function __construct( Logger $logger, FormManager $form_manager ) {
-		$this->logger       = $logger;
+	public function __construct( FormManager $form_manager ) {
 		$this->form_manager = $form_manager;
 
 		// Initialiser les composants admin.
-		$this->settings_page = new SettingsPage( $this->form_manager, $this->logger );
-		$this->ajax_handler  = new AjaxHandler( $this->form_manager, $this->logger );
+		$this->settings_page = new SettingsPage( $this->form_manager );
+		$this->ajax_handler  = new AjaxHandler( $this->form_manager );
 	}
 
 	/**
@@ -177,28 +168,28 @@ class AdminManager {
 
 		// [CORRECTION 2025-10-07] Vérification CSRF et capabilities
 		if ( ! check_admin_referer( 'wcqf_admin_action', '_wpnonce' ) ) {
-			$this->logger->warning( '[AdminManager] CSRF check failed for export action' );
+			LoggingHelper::warning( '[AdminManager] CSRF check failed for export action' );
 			wp_die( esc_html__( 'Token de sécurité invalide.', Constants::TEXT_DOMAIN ) );
 		}
 
 		// [CORRECTION 2025-10-07] Vérifier capabilities avec filtre pour compatibilité
 		$required_capability = apply_filters( 'wcqf_admin_export_capability', Constants::CAP_MANAGE_SETTINGS );
 		if ( ! current_user_can( $required_capability ) ) {
-			$this->logger->warning( '[AdminManager] Insufficient capabilities for export action', array(
+			LoggingHelper::warning( '[AdminManager] Insufficient capabilities for export action', array(
 				'user_id' => get_current_user_id(),
 				'required_capability' => $required_capability,
 			) );
 			wp_die( esc_html__( 'Permissions insuffisantes.', Constants::TEXT_DOMAIN ) );
 		}
 
-		$this->logger->info( '[AdminManager] Action d\'export détectée, traitement immédiat' );
+		LoggingHelper::info( '[AdminManager] Action d\'export détectée, traitement immédiat' );
 
 		// Initialiser les dépendances nécessaires
-		$data_provider = new LogsDataProvider( $this->logger );
-		$filter_manager = new LogsFilterManager( $this->logger );
+		$data_provider = new LogsDataProvider();
+		$filter_manager = new LogsFilterManager();
 		
 		// Initialiser et traiter l'export immédiatement
-		$logs_action_handler = new LogsActionHandler( $this->logger, $data_provider, $filter_manager );
+		$logs_action_handler = new LogsActionHandler( $data_provider, $filter_manager );
 		$logs_action_handler->handle_export_logs();
 	}
 
@@ -210,7 +201,7 @@ class AdminManager {
 	 */
 	public function handle_early_actions() {
 		// [DEBUG 2025-10-07] Log pour comprendre pourquoi l'export ne fonctionne pas
-		$this->logger->debug( '[AdminManager] handle_early_actions appelé', array(
+		LoggingHelper::debug( '[AdminManager] handle_early_actions appelé', array(
 			'GET_page' => $_GET['page'] ?? 'non défini',
 			'GET_tab' => $_GET['tab'] ?? 'non défini',
 			'POST_wcqf_logs_action' => $_POST['wcqf_logs_action'] ?? 'non défini',
@@ -233,27 +224,26 @@ class AdminManager {
 
 		// [CORRECTION 2025-10-07] Vérification CSRF et capabilities
 		if ( ! check_admin_referer( 'wcqf_admin_action', '_wpnonce' ) ) {
-			$this->logger->warning( '[AdminManager] CSRF check failed for early action' );
+			LoggingHelper::warning( '[AdminManager] CSRF check failed for early action' );
 			wp_die( esc_html__( 'Token de sécurité invalide.', Constants::TEXT_DOMAIN ) );
 		}
 
 		// [CORRECTION 2025-10-07] Vérifier capabilities avec filtre pour compatibilité
 		$required_capability = apply_filters( 'wcqf_admin_early_action_capability', Constants::CAP_MANAGE_SETTINGS );
 		if ( ! current_user_can( $required_capability ) ) {
-			$this->logger->warning( '[AdminManager] Insufficient capabilities for early action', array(
+			LoggingHelper::warning( '[AdminManager] Insufficient capabilities for early action', array(
 				'user_id' => get_current_user_id(),
 				'required_capability' => $required_capability,
 			) );
 			wp_die( esc_html__( 'Permissions insuffisantes.', Constants::TEXT_DOMAIN ) );
 		}
 
-		$this->logger->info( '[AdminManager] Action logs détectée, initialisation LogsTabRenderer', array(
+		LoggingHelper::info( '[AdminManager] Action logs détectée, initialisation LogsTabRenderer', array(
 			'action' => $_POST['wcqf_logs_action'],
 		) );
 
 		// Initialiser les composants nécessaires pour traiter l'action
-		$logger = $this->logger;
-		$logs_tab_renderer = new LogsTabRenderer( $logger );
+		$logs_tab_renderer = new LogsTabRenderer();
 		
 		// Traiter l'action (clear logs uniquement)
 		$logs_tab_renderer->init();

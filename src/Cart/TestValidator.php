@@ -12,7 +12,7 @@
 namespace WcQualiopiFormation\Cart;
 
 use WcQualiopiFormation\Security\SessionManager;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -27,19 +27,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class TestValidator {
 
 	/**
-	 * Instance du logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Constructeur
-	 * 
-	 * @param Logger $logger Instance du logger
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -54,13 +44,13 @@ class TestValidator {
 	 * @return bool True si test validé
 	 */
 	public function is_test_validated( int $user_id, int $product_id ): bool {
-		$this->logger->debug( "TestValidator: Checking validation for user {$user_id}, product {$product_id}" );
+		LoggingHelper::debug( "TestValidator: Checking validation for user {$user_id}, product {$product_id}" );
 
 		// 1. Vérification de la session WooCommerce EN PREMIER
 		$session_validated = SessionManager::is_solved( $product_id );
 		
 		if ( $session_validated ) {
-			$this->logger->info( "TestValidator: Product {$product_id} validated via SESSION" );
+			LoggingHelper::info( "TestValidator: Product {$product_id} validated via SESSION" );
 			return true;
 		}
 
@@ -69,12 +59,12 @@ class TestValidator {
 			$is_validated_meta = $this->check_user_meta_validation( $user_id, $product_id );
 			
 			if ( $is_validated_meta ) {
-				$this->logger->info( "TestValidator: Product {$product_id} validated via USER META" );
+				LoggingHelper::info( "TestValidator: Product {$product_id} validated via USER META" );
 				return true;
 			}
 		}
 
-		$this->logger->info( "TestValidator: Product {$product_id} NOT validated" );
+		LoggingHelper::info( "TestValidator: Product {$product_id} NOT validated" );
 		return false;
 	}
 
@@ -102,7 +92,7 @@ class TestValidator {
 			$meta_value = get_user_meta( $user_id, $meta_key, true );
 
 			if ( ! empty( $meta_value ) ) {
-				$this->logger->debug( "TestValidator: Found meta {$meta_key}" );
+				LoggingHelper::debug( "TestValidator: Found meta {$meta_key}" );
 
 				// Si c'est une date ISO, vérifier qu'elle n'est pas expirée
 				if ( $this->is_date_string( $meta_value ) ) {
@@ -144,7 +134,7 @@ class TestValidator {
 		if ( $is_expired ) {
 			// Nettoyer la meta expirée
 			delete_user_meta( $user_id, $meta_key );
-			$this->logger->info( "TestValidator: Expired meta {$meta_key} deleted" );
+			LoggingHelper::info( "TestValidator: Expired meta {$meta_key} deleted" );
 			return true;
 		}
 
@@ -169,7 +159,7 @@ class TestValidator {
 				update_user_meta( $user_id, "_wcqf_testpos_ok_{$product_id}", current_time( 'c' ) );
 			}
 			
-			$this->logger->info( "TestValidator: Forced validation for user {$user_id}, product {$product_id}" );
+			LoggingHelper::info( "TestValidator: Forced validation for user {$user_id}, product {$product_id}" );
 		} else {
 			// Supprimer de la session
 			SessionManager::unset_solved( $product_id );
@@ -179,7 +169,7 @@ class TestValidator {
 				delete_user_meta( $user_id, "_wcqf_testpos_ok_{$product_id}" );
 			}
 			
-			$this->logger->info( "TestValidator: Cleared validation for user {$user_id}, product {$product_id}" );
+			LoggingHelper::info( "TestValidator: Cleared validation for user {$user_id}, product {$product_id}" );
 		}
 	}
 }

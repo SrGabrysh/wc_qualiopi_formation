@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Settings;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Admin\AdminUi;
 use WcQualiopiFormation\Form\FormManager;
 
@@ -29,14 +29,7 @@ class MappingTabRenderer {
 	 */
 	private $form_manager;
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Mapping par défaut (référence depuis FieldMapper)
 	 *
 	 * @var array
@@ -100,11 +93,9 @@ class MappingTabRenderer {
 	 * Constructeur
 	 *
 	 * @param FormManager $form_manager Instance du Form Manager.
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( FormManager $form_manager, Logger $logger ) {
+	public function __construct( $form_manager ) {
 		$this->form_manager = $form_manager;
-		$this->logger = $logger;
 	}
 
 	/**

@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Form\Siren;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,14 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SirenCache {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Préfixe pour les clés de cache
 	 *
 	 * @var string
@@ -36,11 +29,8 @@ class SirenCache {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -64,11 +54,11 @@ class SirenCache {
 		$cached = get_transient( $cache_key );
 
 		if ( false !== $cached ) {
-			$this->logger->debug( 'Cache hit', array( 'siret' => $siret ) );
+			LoggingHelper::debug( 'Cache hit', array( 'siret' => $siret ) );
 			return $cached;
 		}
 
-		$this->logger->debug( 'Cache miss', array( 'siret' => $siret ) );
+		LoggingHelper::debug( 'Cache miss', array( 'siret' => $siret ) );
 		return false;
 	}
 
@@ -89,7 +79,7 @@ class SirenCache {
 		$result = set_transient( $cache_key, $data, $duration );
 
 		if ( $result ) {
-			$this->logger->debug( 'Cache set', array(
+			LoggingHelper::debug( 'Cache set', array(
 				'siret' => $siret,
 				'duration' => $duration,
 			) );
@@ -108,7 +98,7 @@ class SirenCache {
 		$cache_key = $this->get_cache_key( $siret );
 		$result = delete_transient( $cache_key );
 
-		$this->logger->debug( 'Cache delete', array(
+		LoggingHelper::debug( 'Cache delete', array(
 			'siret' => $siret,
 			'success' => $result,
 		) );
@@ -133,7 +123,7 @@ class SirenCache {
 			)
 		);
 
-		$this->logger->info( 'Cache flushed', array( 'count' => $count ) );
+		LoggingHelper::info( 'Cache flushed', array( 'count' => $count ) );
 
 		return $count;
 	}
@@ -197,7 +187,7 @@ class SirenCache {
 			AND option_value < UNIX_TIMESTAMP()"
 		);
 
-		$this->logger->debug( 'Cache cleanup', array( 'count' => $count ) );
+		LoggingHelper::debug( 'Cache cleanup', array( 'count' => $count ) );
 
 		return $count;
 	}

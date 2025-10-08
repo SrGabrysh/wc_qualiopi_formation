@@ -13,7 +13,7 @@
 
 namespace WcQualiopiFormation\Cart;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -35,14 +35,7 @@ class CartRestriction {
 	 */
 	private static $instance = null;
 
-	/**
-	 * Instance du logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du handler
 	 * 
 	 * @var CartRestrictionHandler
@@ -79,7 +72,6 @@ class CartRestriction {
 	 * Constructeur privé (singleton)
 	 */
 	private function __construct() {
-		$this->logger = Logger::get_instance();
 		$this->config = $this->get_default_config();
 
 		$this->init_components();
@@ -105,15 +97,15 @@ class CartRestriction {
 	 * Initialiser les composants
 	 */
 	private function init_components(): void {
-		$this->handler  = new CartRestrictionHandler( $this->config, $this->logger );
-		$this->renderer = new CartRestrictionRenderer( $this->config, $this->logger );
+		$this->handler  = new CartRestrictionHandler( $this->config );
+		$this->renderer = new CartRestrictionRenderer( $this->config );
 	}
 
 	/**
 	 * Initialiser les hooks WordPress
 	 */
 	private function init_hooks(): void {
-		$this->logger->info( 'CartRestriction: Initializing hooks...' );
+		LoggingHelper::info( 'CartRestriction: Initializing hooks...' );
 
 		// 1) Redirection checkout si >1 produit
 		add_action( 'template_redirect', [ $this->handler, 'redirect_checkout_if_too_many' ], 20 );
@@ -131,7 +123,7 @@ class CartRestriction {
 		add_action( 'woocommerce_after_cart_item_quantity_update', [ $this->handler, 'cleanup_notices_if_valid' ], 20, 4 );
 		add_action( 'woocommerce_cart_item_removed', [ $this->handler, 'cleanup_notices_if_valid' ], 20, 2 );
 
-		$this->logger->info( 'CartRestriction: Hooks registered' );
+		LoggingHelper::info( 'CartRestriction: Hooks registered' );
 	}
 
 	/**

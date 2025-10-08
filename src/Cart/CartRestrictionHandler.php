@@ -10,7 +10,7 @@
 
 namespace WcQualiopiFormation\Cart;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WP_Error;
 
 // Security: Exit if accessed directly
@@ -33,13 +33,6 @@ class CartRestrictionHandler {
 	private $config;
 
 	/**
-	 * Logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Flag pour éviter les doublons d'erreur
 	 * 
 	 * @var bool
@@ -49,12 +42,10 @@ class CartRestrictionHandler {
 	/**
 	 * Constructeur
 	 * 
-	 * @param array  $config Configuration
-	 * @param Logger $logger Instance du logger
+	 * @param array $config Configuration
 	 */
-	public function __construct( array $config, Logger $logger ) {
+	public function __construct( array $config ) {
 		$this->config = $config;
-		$this->logger = $logger;
 	}
 
 	/**
@@ -118,7 +109,7 @@ class CartRestrictionHandler {
 			wc_add_notice( $message_with_link, 'error' );
 		}
 
-		$this->logger->info( 'CartRestriction: Redirecting to cart', [
+		LoggingHelper::info( 'CartRestriction: Redirecting to cart', [
 			'cart_qty' => $this->get_cart_quantity(),
 			'max_qty'  => $this->config['max_qty'],
 		] );
@@ -151,7 +142,7 @@ class CartRestrictionHandler {
 			$errors->add( $this->config['notice_key'], $message, 400 );
 			$this->error_added = true;
 
-			$this->logger->info( 'CartRestriction: Blocking checkout (Blocks)', [
+			LoggingHelper::info( 'CartRestriction: Blocking checkout (Blocks)', [
 				'cart_qty' => $this->get_cart_quantity(),
 			] );
 		}
@@ -176,7 +167,7 @@ class CartRestrictionHandler {
 			$message = $this->get_error_message();
 			$errors->add( $this->config['notice_key'], $message );
 
-			$this->logger->info( 'CartRestriction: Blocking checkout (Legacy)', [
+			LoggingHelper::info( 'CartRestriction: Blocking checkout (Legacy)', [
 				'cart_qty' => $this->get_cart_quantity(),
 			] );
 		}
@@ -232,7 +223,7 @@ class CartRestrictionHandler {
 				wc_add_notice( $notice_text, 'error' );
 			}
 
-			$this->logger->debug( 'CartRestriction: Cleaned restriction notices', [
+			LoggingHelper::debug( 'CartRestriction: Cleaned restriction notices', [
 				'removed_count' => $removed,
 			] );
 		}

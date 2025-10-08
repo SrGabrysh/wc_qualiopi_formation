@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SecurityHelper;
 use WcQualiopiFormation\Admin\Logs\LogsDataProvider;
 use WcQualiopiFormation\Admin\Logs\LogsActionHandler;
@@ -27,14 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LogsTabRenderer {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du data provider
 	 *
 	 * @var LogsDataProvider
@@ -64,15 +57,12 @@ class LogsTabRenderer {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
-		$this->data_provider = new LogsDataProvider( $logger );
-		$this->filter_manager = new LogsFilterManager( $logger );
-		$this->action_handler = new LogsActionHandler( $logger, $this->data_provider, $this->filter_manager );
-		$this->filter_renderer = new LogsFilterRenderer( $logger, $this->filter_manager );
+	public function __construct() {
+		$this->data_provider = new LogsDataProvider();
+		$this->filter_manager = new LogsFilterManager();
+		$this->action_handler = new LogsActionHandler( $this->data_provider, $this->filter_manager );
+		$this->filter_renderer = new LogsFilterRenderer( $this->filter_manager );
 	}
 
 	/**

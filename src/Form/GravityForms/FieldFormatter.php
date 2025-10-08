@@ -12,27 +12,17 @@ defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsHelper;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de formatage des données de champs
  */
 class FieldFormatter {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -58,7 +48,7 @@ class FieldFormatter {
 
 		$adresse = implode( ' ', $parts );
 
-		$this->logger->debug( '[FieldFormatter] Adresse formatee', array(
+		LoggingHelper::debug( '[FieldFormatter] Adresse formatee', array(
 			'parts_count' => count( $parts ),
 			'result' => $adresse,
 		) );
@@ -83,7 +73,7 @@ class FieldFormatter {
 
 		$label = $labels[ $type ] ?? $type;
 
-		$this->logger->debug( '[FieldFormatter] Type entreprise converti', array(
+		LoggingHelper::debug( '[FieldFormatter] Type entreprise converti', array(
 			'type_raw' => $type,
 			'label' => $label,
 		) );

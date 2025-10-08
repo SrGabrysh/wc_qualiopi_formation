@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Logs;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -20,20 +20,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LogsDataProvider {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -54,7 +44,7 @@ class LogsDataProvider {
 
 		// [CORRECTION 2025-10-07] file() peut retourner FALSE
 		if ( false === $lines || empty( $lines ) ) {
-			$this->logger->warning( '[LogsDataProvider] Impossible de lire le fichier de logs', array(
+			LoggingHelper::warning( '[LogsDataProvider] Impossible de lire le fichier de logs', array(
 				'log_file' => $log_file,
 				'file_exists' => file_exists( $log_file ),
 				'is_readable' => is_readable( $log_file ),
@@ -63,7 +53,7 @@ class LogsDataProvider {
 			return array();
 		}
 
-		$this->logger->debug( '[LogsDataProvider] Fichier de logs lu avec succès', array(
+		LoggingHelper::debug( '[LogsDataProvider] Fichier de logs lu avec succès', array(
 			'total_lines' => count( $lines ),
 			'limit' => $limit,
 		) );

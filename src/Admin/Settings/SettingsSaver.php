@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Settings;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
 use WcQualiopiFormation\Helpers\ApiKeyManager;
 
@@ -22,14 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class SettingsSaver {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Mapping par défaut (référence)
 	 *
 	 * @var array
@@ -51,11 +44,8 @@ class SettingsSaver {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -98,7 +88,7 @@ class SettingsSaver {
 				'success'
 			);
 
-			$this->logger->info( '[SettingsSaver] Paramètres sauvegardés', array(
+			LoggingHelper::info( '[SettingsSaver] Paramètres sauvegardés', array(
 				'settings_keys' => array_keys( $settings ),
 				'form_mappings_count' => count( $settings['form_mappings'] ?? array() ),
 			) );
@@ -122,7 +112,7 @@ class SettingsSaver {
 		$settings = array();
 
 		// [AJOUT 2025-10-07] Traiter les clés API via ApiKeyManager
-		$api_key_manager = ApiKeyManager::get_instance( $this->logger );
+		$api_key_manager = ApiKeyManager::get_instance();
 		$providers = $api_key_manager->get_all_providers();
 
 		foreach ( $providers as $provider_id => $provider_data ) {
@@ -134,7 +124,7 @@ class SettingsSaver {
 				// Si clé non vide, la sauvegarder via ApiKeyManager (chiffrée)
 				if ( ! empty( $api_key ) ) {
 					$api_key_manager->set_api_key( $provider_id, $api_key );
-					$this->logger->info( '[SettingsSaver] Cle API sauvegardee', array(
+					LoggingHelper::info( '[SettingsSaver] Cle API sauvegardee', array(
 						'provider' => $provider_id,
 					) );
 				}
@@ -197,7 +187,7 @@ class SettingsSaver {
 
 			// Vérifier si réinitialisation demandée
 			if ( isset( $mapping['_reset'] ) && $mapping['_reset'] === '1' ) {
-				$this->logger->info( '[SettingsSaver] Réinitialisation mapping', array( 'form_id' => $form_id ) );
+				LoggingHelper::info( '[SettingsSaver] Réinitialisation mapping', array( 'form_id' => $form_id ) );
 				$sanitized[ $form_id ] = self::DEFAULT_MAPPING;
 				continue;
 			}

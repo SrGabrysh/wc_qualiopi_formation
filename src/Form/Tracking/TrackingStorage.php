@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Form\Tracking;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,20 +21,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class TrackingStorage {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -83,7 +73,7 @@ class TrackingStorage {
 		) );
 
 		if ( false === $result ) {
-			$this->logger->error( 'Tracking insert failed', array(
+			LoggingHelper::error( 'Tracking insert failed', array(
 				'error' => $wpdb->last_error,
 			) );
 			return false;
@@ -207,7 +197,7 @@ class TrackingStorage {
 			)
 		);
 
-		$this->logger->info( 'Tracking cleanup', array(
+		LoggingHelper::info( 'Tracking cleanup', array(
 			'deleted' => $count,
 			'days' => $days,
 		) );

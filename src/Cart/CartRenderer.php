@@ -10,7 +10,7 @@
 
 namespace WcQualiopiFormation\Cart;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 // Security: Exit if accessed directly
 if ( ! defined( 'ABSPATH' ) ) {
@@ -25,19 +25,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 class CartRenderer {
 
 	/**
-	 * Instance du logger
-	 * 
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Constructeur
-	 * 
-	 * @param Logger $logger Instance du logger
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -46,7 +36,7 @@ class CartRenderer {
 	 * @return void
 	 */
 	public function render_blocked_checkout_message(): void {
-		$this->logger->debug( 'CartRenderer: Rendering blocked checkout message' );
+		LoggingHelper::debug( 'CartRenderer: Rendering blocked checkout message' );
 		?>
 		<div class="wcqf-checkout-blocked" role="alert" aria-live="assertive">
 			<div class="woocommerce-info">
@@ -73,7 +63,7 @@ class CartRenderer {
 			return;
 		}
 
-		$this->logger->debug( "CartRenderer: Rendering test notice for product: {$product_name}" );
+		LoggingHelper::debug( "CartRenderer: Rendering test notice for product: {$product_name}" );
 		?>
 		<div class="wcqf-test-notice" role="alert" aria-live="polite">
 			<div class="woocommerce-message">
@@ -96,7 +86,7 @@ class CartRenderer {
 	 * @return void
 	 */
 	public function render_test_unavailable_notice( string $product_name ): void {
-		$this->logger->warning( "CartRenderer: Test unavailable for product: {$product_name}" );
+		LoggingHelper::warning( "CartRenderer: Test unavailable for product: {$product_name}" );
 		?>
 		<div class="wcqf-test-unavailable" role="alert" aria-live="assertive">
 			<div class="woocommerce-error">
@@ -118,7 +108,7 @@ class CartRenderer {
 			return;
 		}
 
-		$this->logger->info( 'CartRenderer: Rendering ' . count( $pending_tests ) . ' test notices' );
+		LoggingHelper::info( 'CartRenderer: Rendering ' . count( $pending_tests ) . ' test notices' );
 
 		foreach ( $pending_tests as $test_info ) {
 			$this->render_test_notice( $test_info );
@@ -137,14 +127,14 @@ class CartRenderer {
 				__( 'Pour poursuivre, vous devez d\'abord réaliser le test de positionnement lié à cette formation.', 'wcqf' ),
 				'notice'
 			);
-			$this->logger->debug( 'CartRenderer: Added blocking notice' );
+			LoggingHelper::debug( 'CartRenderer: Added blocking notice' );
 		} else {
 			// Message de succès si le test est validé
 			wc_add_notice(
 				__( '✅ Test de positionnement validé ! Vous pouvez maintenant procéder au paiement.', 'wcqf' ),
 				'success'
 			);
-			$this->logger->debug( 'CartRenderer: Added success notice' );
+			LoggingHelper::debug( 'CartRenderer: Added success notice' );
 		}
 	}
 }

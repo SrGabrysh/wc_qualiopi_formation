@@ -11,12 +11,11 @@ namespace WcQualiopiFormation\Form\Tracking;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Form\Tracking\DataExtractor;
 use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 use WcQualiopiFormation\Form\Tracking\TrackingStorage;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
-use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de gestion du tracking des soumissions
@@ -29,14 +28,7 @@ use WcQualiopiFormation\Helpers\LoggingHelper;
  */
 class TrackingManager {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du data extractor
 	 *
 	 * @var DataExtractor
@@ -59,16 +51,13 @@ class TrackingManager {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger         = $logger;
+	public function __construct() {
 		$this->data_extractor = new DataExtractor();
 		$this->field_mapper   = new FieldMapper();
-		$this->storage        = new TrackingStorage( $logger );
+		$this->storage        = new TrackingStorage();
 
-		LoggingHelper::log_db_operation( $this->logger, 'init', 'TrackingManager', array( 'status' => 'storage_initialized' ) );
+		LoggingHelper::info( '[TrackingManager] Storage initialized' );
 	}
 
 	/**
@@ -93,10 +82,10 @@ class TrackingManager {
 	public function capture_submission( $entry, $form ) {
 		// Security: Validate inputs
 		if ( ! is_array( $entry ) || ! is_array( $form ) ) {
-			LoggingHelper::log_validation_error( $this->logger, 'entry_form_data', array( 'entry' => $entry, 'form' => $form ), 'Invalid entry or form data provided' );
+			LoggingHelper::log_validation_error( null, 'entry_form_data', array( 'entry' => $entry, 'form' => $form ), 'Invalid entry or form data provided' );
 			return;
 		}
-		LoggingHelper::log_db_operation( $this->logger, 'capture', 'TrackingManager', array(
+		LoggingHelper::log_db_operation( null, 'capture', 'TrackingManager', array(
 			'status'   => 'submission_start',
 			'form_id'  => $form['id'],
 			'entry_id' => $entry['id'] ?? null,
@@ -104,11 +93,11 @@ class TrackingManager {
 
 		// Vérifier si le formulaire doit être tracké.
 		if ( ! $this->should_track_form( $form['id'] ) ) {
-			$this->logger->debug( '[TrackingManager] Formulaire non tracke, skip', array( 'form_id' => $form['id'] ) );
+			LoggingHelper::debug( '[TrackingManager] Formulaire non tracke, skip', array( 'form_id' => $form['id'] ) );
 			return;
 		}
 
-		LoggingHelper::log_db_operation( $this->logger, 'track', 'TrackingManager', array(
+		LoggingHelper::log_db_operation( null, 'track', 'TrackingManager', array(
 			'status'   => 'form_tracked',
 			'form_id'  => $form['id'],
 			'entry_id' => $entry['id'] ?? null,
@@ -118,7 +107,7 @@ class TrackingManager {
 		$token = SanitizationHelper::sanitize_siret( rgar( $entry, '9999' ) );
 
 		if ( empty( $token ) ) {
-			LoggingHelper::log_validation_error( $this->logger, 'token', $form['id'], 'No token found in submission' );
+			LoggingHelper::log_validation_error( null, 'token', $form['id'], 'No token found in submission' );
 			// Continuer quand même le tracking sans token.
 		}
 
@@ -178,7 +167,7 @@ class TrackingManager {
 		$result = $wpdb->insert( $table_name, $insert_data, $formats );
 
 		if ( false === $result ) {
-			LoggingHelper::log_db_operation( $this->logger, 'error', 'TrackingManager', array(
+			LoggingHelper::log_db_operation( null, 'error', 'TrackingManager', array(
 				'status'   => 'save_failed',
 				'token'    => $token,
 				'form_id'  => $form_id,
@@ -190,7 +179,7 @@ class TrackingManager {
 
 		$insert_id = $wpdb->insert_id;
 
-		LoggingHelper::log_db_operation( $this->logger, 'success', 'TrackingManager', array(
+		LoggingHelper::log_db_operation( null, 'success', 'TrackingManager', array(
 			'status'      => 'submission_saved',
 			'tracking_id' => $insert_id,
 			'token'       => $token ? substr( $token, 0, 10 ) . '...' : 'N/A',

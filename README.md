@@ -152,6 +152,65 @@ wc_qualiopi_formation/
 - [Roadmap du projet](Dev/Refactorisation/ROADMAP_FUSION_PLUGINS_QUALIOPI.md)
 - [Rapport Phase 0](Dev/Phase_0_Audit/RAPPORT_PHASE_0_COMPLET.md)
 
+## 🔧 API Développeur
+
+Le plugin expose plusieurs composants réutilisables pour étendre ses fonctionnalités.
+
+### Composants principaux
+
+- **CalculationRetriever** - Récupération de valeurs calculées dans Gravity Forms
+- **PageTransitionHandler** - Gestion automatique des transitions de pages et détermination de parcours
+- **FieldMapper** - Mapping entre champs Gravity Forms et données métier
+- **LoggingHelper** - Système de logs structurés (JSON monoligne, compatible CloudWatch)
+
+### Documentation technique complète
+
+📖 **Consultez les guides détaillés** :
+
+- [`docs/api/gravity-forms/page-transition-handler.md`](docs/api/gravity-forms/page-transition-handler.md) - Guide complet PageTransitionHandler
+- [`docs/api/gravity-forms/calculation-retriever.md`](docs/api/gravity-forms/calculation-retriever.md) - Synthèse technique CalculationRetriever
+- [`docs/api/gravity-forms/examples.md`](docs/api/gravity-forms/examples.md) - Exemples d'utilisation et intégration
+
+### Action WordPress disponible
+
+```php
+// Écouter la complétion du test de positionnement
+add_action( 'wcqf_test_completed', function( $score, $path, $submission_data, $form ) {
+    // $score : 0-20 | $path : 'refused', 'reinforced', 'admitted'
+}, 10, 4 );
+```
+
+**Voir la documentation technique pour les détails d'implémentation.**
+
+## 📊 Système de Logs
+
+Le plugin dispose d'un système de logs complet accessible depuis l'interface admin.
+
+### Consultation des logs
+
+**Interface admin** : Réglages → WC Qualiopi Formation → Onglet "Logs"
+
+Fonctionnalités disponibles :
+
+- Consultation des logs récents avec filtres (date, niveau)
+- Export CSV pour analyse externe
+- Vidage du fichier de logs
+
+### Fichiers de logs
+
+Les logs sont stockés dans : `/wp-content/uploads/wc-logs/wc-qualiopi-formation-*.log`
+
+- ✅ Fichier dédié uniquement au plugin (pas de mélange)
+- ✅ Rotation automatique quotidienne
+- ✅ Nettoyage automatique après 30 jours
+
+### Documentation complète
+
+📖 **Consultez les guides détaillés** :
+
+- [`docs/guides/viewing-logs.md`](docs/guides/viewing-logs.md) - Guide utilisateur : consulter les logs
+- [`docs/architecture/logging-system.md`](docs/architecture/logging-system.md) - Architecture technique du système
+
 ## 🧪 Tests
 
 ```bash
@@ -195,6 +254,8 @@ composer phpcbf
 - ✅ Validation email RFC-compliant - `SanitizationHelper::validate_email_rfc()`
 - ✅ Feedback visuel temps réel (téléphone + email)
 - ✅ Pré-remplissage checkout WooCommerce automatique
+- ✅ Récupération valeurs calculées (CalculationRetriever) - Score de positionnement
+- ✅ Gestion transitions de pages (PageTransitionHandler) - Détermination parcours formation
 
 #### 🪵 Logs & Monitoring
 

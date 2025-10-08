@@ -12,7 +12,7 @@
 namespace WcQualiopiFormation\Helpers;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Admin\AdminUi;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -26,14 +26,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class ConfigFieldBuilder {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Sections enregistrées
 	 *
 	 * @var array
@@ -52,10 +45,8 @@ class ConfigFieldBuilder {
 	 *
 	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
-		
-		$this->logger->debug( '[ConfigFieldBuilder] Initialized' );
+	public function __construct() {
+				LoggingHelper::debug( '[ConfigFieldBuilder] Initialized' );
 	}
 
 	/**
@@ -73,7 +64,7 @@ class ConfigFieldBuilder {
 			'description' => $description,
 		);
 
-		$this->logger->debug( '[ConfigFieldBuilder] Section ajoutee', array(
+		LoggingHelper::debug( '[ConfigFieldBuilder] Section ajoutee', array(
 			'section_id' => $id,
 			'title' => $title,
 		) );
@@ -93,7 +84,7 @@ class ConfigFieldBuilder {
 	 */
 	public function add_field( $section_id, $field_id, $type, $label, $args = array() ) {
 		if ( ! isset( $this->sections[ $section_id ] ) ) {
-			$this->logger->warning( '[ConfigFieldBuilder] Section inexistante pour champ', array(
+			LoggingHelper::warning( '[ConfigFieldBuilder] Section inexistante pour champ', array(
 				'section_id' => $section_id,
 				'field_id' => $field_id,
 			) );
@@ -117,7 +108,7 @@ class ConfigFieldBuilder {
 
 		$this->fields[ $field_id ] = $field_data;
 
-		$this->logger->debug( '[ConfigFieldBuilder] Champ ajoute', array(
+		LoggingHelper::debug( '[ConfigFieldBuilder] Champ ajoute', array(
 			'section_id' => $section_id,
 			'field_id' => $field_id,
 			'type' => $type,
@@ -135,7 +126,7 @@ class ConfigFieldBuilder {
 	 */
 	public function render_section( $section_id, $values = array() ) {
 		if ( ! isset( $this->sections[ $section_id ] ) ) {
-			$this->logger->warning( '[ConfigFieldBuilder] Tentative render section inexistante', array(
+			LoggingHelper::warning( '[ConfigFieldBuilder] Tentative render section inexistante', array(
 				'section_id' => $section_id,
 			) );
 			return;
@@ -160,7 +151,7 @@ class ConfigFieldBuilder {
 
 		echo AdminUi::section_end();
 
-		$this->logger->debug( '[ConfigFieldBuilder] Section rendue avec AdminUi', array(
+		LoggingHelper::debug( '[ConfigFieldBuilder] Section rendue avec AdminUi', array(
 			'section_id' => $section_id,
 			'fields_count' => count( array_filter( $this->fields, function( $f ) use ( $section_id ) {
 				return $f['section_id'] === $section_id;
@@ -375,7 +366,7 @@ class ConfigFieldBuilder {
 	 */
 	public function sanitize_field( $field_id, $value ) {
 		if ( ! isset( $this->fields[ $field_id ] ) ) {
-			$this->logger->warning( '[ConfigFieldBuilder] Champ inexistant pour sanitization', array(
+			LoggingHelper::warning( '[ConfigFieldBuilder] Champ inexistant pour sanitization', array(
 				'field_id' => $field_id,
 			) );
 			return '';
@@ -387,7 +378,7 @@ class ConfigFieldBuilder {
 		if ( ! empty( $field['sanitize_callback'] ) && \is_callable( $field['sanitize_callback'] ) ) {
 			$sanitized = \call_user_func( $field['sanitize_callback'], $value );
 			
-			$this->logger->debug( '[ConfigFieldBuilder] Sanitization personnalisee', array(
+			LoggingHelper::debug( '[ConfigFieldBuilder] Sanitization personnalisee', array(
 				'field_id' => $field_id,
 			) );
 			
@@ -416,7 +407,7 @@ class ConfigFieldBuilder {
 				$sanitized = \sanitize_text_field( $value );
 		}
 
-		$this->logger->debug( '[ConfigFieldBuilder] Sanitization automatique', array(
+		LoggingHelper::debug( '[ConfigFieldBuilder] Sanitization automatique', array(
 			'field_id' => $field_id,
 			'type' => $field['type'],
 		) );

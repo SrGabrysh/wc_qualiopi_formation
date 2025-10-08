@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SecurityHelper;
 use WcQualiopiFormation\Admin\Settings\GeneralTabRenderer;
 use WcQualiopiFormation\Admin\Settings\MappingTabRenderer;
@@ -32,14 +32,7 @@ class SettingsPage {
 	 */
 	private $form_manager;
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du renderer de logs
 	 *
 	 * @var LogsTabRenderer
@@ -78,16 +71,14 @@ class SettingsPage {
 	 * Constructeur
 	 *
 	 * @param \WcQualiopiFormation\Form\FormManager $form_manager Instance du Form Manager.
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( $form_manager, Logger $logger ) {
+	public function __construct( $form_manager ) {
 		$this->form_manager = $form_manager;
-		$this->logger = $logger;
-		$this->logs_renderer = new LogsTabRenderer( $logger );
-		$this->general_renderer = new GeneralTabRenderer( $logger );
-		$this->mapping_renderer = new MappingTabRenderer( $form_manager, $logger );
-		$this->tracking_renderer = new TrackingTabRenderer( $form_manager, $logger );
-		$this->settings_saver = new SettingsSaver( $logger );
+		$this->logs_renderer = new LogsTabRenderer();
+		$this->general_renderer = new GeneralTabRenderer();
+		$this->mapping_renderer = new MappingTabRenderer( $form_manager );
+		$this->tracking_renderer = new TrackingTabRenderer( $form_manager );
+		$this->settings_saver = new SettingsSaver();
 	}
 
 	/**

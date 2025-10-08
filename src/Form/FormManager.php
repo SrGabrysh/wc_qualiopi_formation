@@ -11,11 +11,14 @@ namespace WcQualiopiFormation\Form;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Form\Siren\SirenAutocomplete;
 use WcQualiopiFormation\Form\GravityForms\FieldInjector;
 use WcQualiopiFormation\Form\GravityForms\SubmissionHandler;
 use WcQualiopiFormation\Form\GravityForms\AjaxHandler;
+use WcQualiopiFormation\Form\GravityForms\FieldMapper;
+use WcQualiopiFormation\Form\GravityForms\CalculationRetriever;
+use WcQualiopiFormation\Form\GravityForms\PageTransitionHandler;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsGenerator;
 use WcQualiopiFormation\Form\Tracking\TrackingManager;
 
@@ -23,20 +26,13 @@ use WcQualiopiFormation\Form\Tracking\TrackingManager;
  * Classe d'orchestration du module Form
  *
  * Gère l'intégration avec Gravity Forms :
- * - Autocomplete SIRET via API Pappers
+ * - Autocomplete SIRET via API SIREN officielle
  * - Pré-remplissage automatique des champs
  * - Génération mentions légales
  * - Injection token HMAC
  * - Tracking des soumissions
  */
 class FormManager {
-
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
 
 	/**
 	 * Instance SirenAutocomplete
@@ -81,13 +77,30 @@ class FormManager {
 	private $tracking_manager;
 
 	/**
-	 * Constructeur
+	 * Instance FieldMapper
 	 *
-	 * @param Logger $logger Instance du logger.
+	 * @var FieldMapper
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	private $field_mapper;
 
+	/**
+	 * Instance CalculationRetriever
+	 *
+	 * @var CalculationRetriever
+	 */
+	private $calculation_retriever;
+
+	/**
+	 * Instance PageTransitionHandler
+	 *
+	 * @var PageTransitionHandler
+	 */
+	private $page_transition_handler;
+
+	/**
+	 * Constructeur
+	 */
+	public function __construct() {
 		$this->init_components();
 		$this->init_hooks();
 	}
@@ -96,21 +109,26 @@ class FormManager {
 	 * Initialise les composants du module
 	 */
 	private function init_components() {
-		// Module Siren (API Pappers + validation).
-		$this->siren_autocomplete = new SirenAutocomplete( $this->logger );
+		// Module Siren (API SIREN officielle + validation).
+		$this->siren_autocomplete = new SirenAutocomplete();
 
 		// Module Mentions Légales.
-		$this->mentions_generator = new MentionsGenerator( $this->logger );
+		$this->mentions_generator = new MentionsGenerator();
 
-		// Module Gravity Forms.
-		$this->field_injector      = new FieldInjector( $this->logger );
-		$this->submission_handler  = new SubmissionHandler( $this->logger );
-		$this->ajax_handler        = new AjaxHandler( $this->logger, $this->siren_autocomplete, $this->mentions_generator );
+		// Module Gravity Forms - Mapping et récupération de valeurs.
+		$this->field_mapper = new FieldMapper();
+		$this->calculation_retriever = new CalculationRetriever( $this->field_mapper );
+		$this->page_transition_handler = new PageTransitionHandler( $this->calculation_retriever );
+
+		// Module Gravity Forms - Injection, soumission, AJAX.
+		$this->field_injector      = new FieldInjector();
+		$this->submission_handler  = new SubmissionHandler();
+		$this->ajax_handler        = new AjaxHandler( $this->siren_autocomplete, $this->mentions_generator );
 
 		// Module Tracking.
-		$this->tracking_manager = new TrackingManager( $this->logger );
+		$this->tracking_manager = new TrackingManager();
 
-		$this->logger->info( 'Form modules initialized' );
+		LoggingHelper::info( '[FormManager] Form modules initialized' );
 	}
 
 	/**
@@ -127,9 +145,10 @@ class FormManager {
 		$this->field_injector->init_hooks();
 		$this->submission_handler->init_hooks();
 		$this->ajax_handler->init_hooks();
+		$this->page_transition_handler->init_hooks();
 		$this->tracking_manager->init_hooks();
 
-		$this->logger->info( 'Form hooks registered' );
+		LoggingHelper::info( '[FormManager] Form hooks registered' );
 	}
 
 	/**
@@ -137,7 +156,7 @@ class FormManager {
 	 */
 	public function show_gf_required_notice() {
 		echo '<div class="notice notice-error"><p>';
-		echo esc_html__(
+		echo \esc_html__(
 			'WC Qualiopi Formation (Module Form) requires Gravity Forms to be installed and active.',
 			Constants::TEXT_DOMAIN
 		);
@@ -169,6 +188,33 @@ class FormManager {
 	 */
 	public function get_tracking_manager() {
 		return $this->tracking_manager;
+	}
+
+	/**
+	 * Récupère l'instance CalculationRetriever
+	 *
+	 * @return CalculationRetriever
+	 */
+	public function get_calculation_retriever() {
+		return $this->calculation_retriever;
+	}
+
+	/**
+	 * Récupère l'instance FieldMapper
+	 *
+	 * @return FieldMapper
+	 */
+	public function get_field_mapper() {
+		return $this->field_mapper;
+	}
+
+	/**
+	 * Récupère l'instance PageTransitionHandler
+	 *
+	 * @return PageTransitionHandler
+	 */
+	public function get_page_transition_handler() {
+		return $this->page_transition_handler;
 	}
 }
 

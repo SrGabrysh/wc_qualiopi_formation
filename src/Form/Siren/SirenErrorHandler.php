@@ -11,27 +11,17 @@ namespace WcQualiopiFormation\Form\Siren;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de gestion des erreurs API SIREN
  */
 class SirenErrorHandler {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -42,7 +32,7 @@ class SirenErrorHandler {
 	 * @return void
 	 */
 	public function log_error( $context, $error ) {
-		$this->logger->error( "[SirenErrorHandler] Erreur API {$context}", array(
+		LoggingHelper::error( "[SirenErrorHandler] Erreur API {$context}", array(
 			'context'       => $context,
 			'error_code'    => $error->get_error_code(),
 			'error_message' => $error->get_error_message(),

@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Logs;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SecurityHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,14 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LogsActionHandler {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du data provider
 	 *
 	 * @var LogsDataProvider
@@ -45,14 +38,12 @@ class LogsActionHandler {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger            $logger Instance du logger.
 	 * @param LogsDataProvider  $data_provider Instance du data provider.
 	 * @param LogsFilterManager $filter_manager Instance du filter manager.
 	 */
-	public function __construct( Logger $logger, LogsDataProvider $data_provider, LogsFilterManager $filter_manager = null ) {
-		$this->logger = $logger;
+	public function __construct( $data_provider, $filter_manager ) {
 		$this->data_provider = $data_provider;
-		$this->filter_manager = $filter_manager ?? new LogsFilterManager( $logger );
+		$this->filter_manager = $filter_manager;
 	}
 
 	/**
@@ -122,7 +113,7 @@ class LogsActionHandler {
 				'success'
 			);
 
-			$this->logger->info( 'Logs cleared by admin', array( 'backup_file' => $backup_file ) );
+			LoggingHelper::info( 'Logs cleared by admin', array( 'backup_file' => $backup_file ) );
 		} else {
 			\add_settings_error(
 				'wcqf_logs',
@@ -139,13 +130,13 @@ class LogsActionHandler {
 	 */
 	public function handle_export_logs() {
 		// [DEBUG 2025-10-07] Log pour comprendre si cette fonction est appelée
-		$this->logger->info( '[LogsActionHandler] handle_export_logs appelé' );
+		LoggingHelper::info( '[LogsActionHandler] handle_export_logs appelé' );
 
 		// [CORRECTION 2025-10-07] Vérifier le nonce avec la nouvelle approche unifiée
 		$nonce = \sanitize_text_field( \wp_unslash( $_POST['_wpnonce'] ?? '' ) );
 		$nonce_valid = \wp_verify_nonce( $nonce, 'wcqf_admin_action' );
 
-		$this->logger->debug( '[LogsActionHandler] Vérification nonce', array(
+		LoggingHelper::debug( '[LogsActionHandler] Vérification nonce', array(
 			'nonce_present' => ! empty( $nonce ),
 			'nonce_valid' => $nonce_valid,
 		) );
@@ -156,13 +147,13 @@ class LogsActionHandler {
 				'nonce_error',
 				\esc_html__( 'Token de sécurité invalide.', Constants::TEXT_DOMAIN )
 			);
-			$this->logger->warning( '[LogsActionHandler] Export échoué : nonce invalide' );
+			LoggingHelper::warning( '[LogsActionHandler] Export échoué : nonce invalide' );
 			return;
 		}
 
 		// [CORRECTION 2025-10-07] Vérifier les capabilities
 		if ( ! \current_user_can( Constants::CAP_MANAGE_SETTINGS ) ) {
-			$this->logger->warning( '[LogsActionHandler] Export échoué : permissions insuffisantes' );
+			LoggingHelper::warning( '[LogsActionHandler] Export échoué : permissions insuffisantes' );
 			\add_settings_error(
 				'wcqf_logs',
 				'capability_error',
@@ -171,7 +162,7 @@ class LogsActionHandler {
 			return;
 		}
 
-		$this->logger->debug( '[LogsActionHandler] Permissions OK, récupération des logs' );
+		LoggingHelper::debug( '[LogsActionHandler] Permissions OK, récupération des logs' );
 
 		// Récupérer les paramètres de filtres depuis l'URL
 		$filter_params = $this->filter_manager->get_filter_params();
@@ -179,27 +170,27 @@ class LogsActionHandler {
 		// [CORRECTION 2025-10-07] Passer le limit des filtres à get_logs()
 		// Récupérer les logs avec la limite configurée dans les filtres
 		$logs = $this->data_provider->get_logs( $filter_params['limit'] );
-		$this->logger->debug( '[LogsActionHandler] Logs récupérés avant filtres', array(
+		LoggingHelper::debug( '[LogsActionHandler] Logs récupérés avant filtres', array(
 			'total_logs' => count( $logs ),
 			'limit_requested' => $filter_params['limit'],
 		) );
 
 		$logs = $this->filter_manager->apply_date_filter( $logs, $filter_params['date_filter'] );
-		$this->logger->debug( '[LogsActionHandler] Logs après filtre date', array(
+		LoggingHelper::debug( '[LogsActionHandler] Logs après filtre date', array(
 			'total_logs' => count( $logs ),
 			'date_filter' => $filter_params['date_filter'],
 		) );
 		
 		if ( ! empty( $filter_params['level_filter'] ) ) {
 			$logs = $this->filter_manager->apply_level_filter( $logs, $filter_params['level_filter'] );
-			$this->logger->debug( '[LogsActionHandler] Logs après filtre level', array(
+			LoggingHelper::debug( '[LogsActionHandler] Logs après filtre level', array(
 				'total_logs' => count( $logs ),
 				'level_filter' => $filter_params['level_filter'],
 			) );
 		}
 
 		if ( empty( $logs ) ) {
-			$this->logger->warning( '[LogsActionHandler] Export échoué : aucun log après filtrage' );
+			LoggingHelper::warning( '[LogsActionHandler] Export échoué : aucun log après filtrage' );
 			\add_settings_error(
 				'wcqf_logs',
 				'no_logs',
@@ -208,7 +199,7 @@ class LogsActionHandler {
 			return;
 		}
 
-		$this->logger->info( '[LogsActionHandler] Export en cours', array(
+		LoggingHelper::info( '[LogsActionHandler] Export en cours', array(
 			'total_logs' => count( $logs ),
 		) );
 
@@ -230,7 +221,7 @@ class LogsActionHandler {
 		$log_content = $this->format_logs_for_export( $logs );
 
 		// [DEBUG 2025-10-07] Log avant envoi des headers
-		$this->logger->info( '[LogsActionHandler] Envoi des headers d\'export', array(
+		LoggingHelper::info( '[LogsActionHandler] Envoi des headers d\'export', array(
 			'export_filename' => $export_filename,
 			'total_logs' => count( $logs ),
 			'content_length' => strlen( $log_content ),
@@ -244,7 +235,7 @@ class LogsActionHandler {
 		// Envoyer le contenu et terminer l'exécution
 		echo $log_content;
 		
-		$this->logger->info(
+		LoggingHelper::info(
 			'[LogsActionHandler] Logs exportés avec succès',
 			array(
 				'export_filename' => $export_filename,

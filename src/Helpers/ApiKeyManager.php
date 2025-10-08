@@ -16,7 +16,7 @@
 namespace WcQualiopiFormation\Helpers;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,14 +36,7 @@ class ApiKeyManager {
 	 */
 	private static $instance = null;
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Configuration des providers API
 	 *
 	 * @var array
@@ -80,14 +73,11 @@ class ApiKeyManager {
 
 	/**
 	 * Constructeur privé pour le pattern Singleton
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	private function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	private function __construct() {
 		$this->encryption_key = $this->get_encryption_key();
 		
-		$this->logger->debug( '[ApiKeyManager] Initialized', array(
+		LoggingHelper::debug( '[ApiKeyManager] Initialized', array(
 			'providers_count' => count( self::PROVIDERS ),
 			'providers' => array_keys( self::PROVIDERS ),
 		) );
@@ -96,12 +86,11 @@ class ApiKeyManager {
 	/**
 	 * Récupère l'instance singleton
 	 *
-	 * @param Logger $logger Instance du logger.
 	 * @return ApiKeyManager
 	 */
-	public static function get_instance( Logger $logger ) {
+	public static function get_instance() {
 		if ( self::$instance === null ) {
-			self::$instance = new self( $logger );
+			self::$instance = new self();
 		}
 		return self::$instance;
 	}
@@ -115,7 +104,7 @@ class ApiKeyManager {
 	 */
 	public function get_api_key( $provider ) {
 		if ( ! $this->is_valid_provider( $provider ) ) {
-			$this->logger->warning( '[ApiKeyManager] Provider invalide', array( 'provider' => $provider ) );
+			LoggingHelper::warning( '[ApiKeyManager] Provider invalide', array( 'provider' => $provider ) );
 			return null;
 		}
 
@@ -124,7 +113,7 @@ class ApiKeyManager {
 		$env_value = \getenv( $env_key );
 		
 		if ( ! empty( $env_value ) ) {
-			$this->logger->debug( '[ApiKeyManager] Cle API depuis .env', array(
+			LoggingHelper::debug( '[ApiKeyManager] Cle API depuis .env', array(
 				'provider' => $provider,
 				'source' => 'environment',
 				'key_preview' => $this->get_key_preview( $env_value ),
@@ -137,14 +126,14 @@ class ApiKeyManager {
 		$encrypted_key = $settings['api_keys'][ $provider ] ?? '';
 
 		if ( empty( $encrypted_key ) ) {
-			$this->logger->debug( '[ApiKeyManager] Aucune cle API trouvee', array( 'provider' => $provider ) );
+			LoggingHelper::debug( '[ApiKeyManager] Aucune cle API trouvee', array( 'provider' => $provider ) );
 			return null;
 		}
 
 		// Déchiffrer la clé
 		$decrypted_key = $this->decrypt( $encrypted_key );
 
-		$this->logger->debug( '[ApiKeyManager] Cle API recup depuis BDD', array(
+		LoggingHelper::debug( '[ApiKeyManager] Cle API recup depuis BDD', array(
 			'provider' => $provider,
 			'source' => 'database',
 			'key_preview' => $this->get_key_preview( $decrypted_key ),
@@ -162,13 +151,13 @@ class ApiKeyManager {
 	 */
 	public function set_api_key( $provider, $api_key ) {
 		if ( ! $this->is_valid_provider( $provider ) ) {
-			$this->logger->error( '[ApiKeyManager] Provider invalide pour set', array( 'provider' => $provider ) );
+			LoggingHelper::error( '[ApiKeyManager] Provider invalide pour set', array( 'provider' => $provider ) );
 			return false;
 		}
 
 		// Valider la clé (non vide)
 		if ( empty( $api_key ) ) {
-			$this->logger->warning( '[ApiKeyManager] Tentative de set cle vide', array( 'provider' => $provider ) );
+			LoggingHelper::warning( '[ApiKeyManager] Tentative de set cle vide', array( 'provider' => $provider ) );
 			return false;
 		}
 
@@ -182,7 +171,7 @@ class ApiKeyManager {
 		$result = \update_option( Constants::OPTION_SETTINGS, $settings );
 
 		if ( $result ) {
-			$this->logger->info( '[ApiKeyManager] Cle API sauvegardee', array(
+			LoggingHelper::info( '[ApiKeyManager] Cle API sauvegardee', array(
 				'provider' => $provider,
 				'key_preview' => $this->get_key_preview( $api_key ),
 			) );
@@ -190,7 +179,7 @@ class ApiKeyManager {
 			// Audit trail
 			$this->log_audit( $provider, 'set', $api_key );
 		} else {
-			$this->logger->error( '[ApiKeyManager] Echec sauvegarde cle API', array( 'provider' => $provider ) );
+			LoggingHelper::error( '[ApiKeyManager] Echec sauvegarde cle API', array( 'provider' => $provider ) );
 		}
 
 		return $result;
@@ -206,7 +195,7 @@ class ApiKeyManager {
 		$key = $this->get_api_key( $provider );
 		$has_key = ! empty( $key );
 
-		$this->logger->debug( '[ApiKeyManager] Verification presence cle', array(
+		LoggingHelper::debug( '[ApiKeyManager] Verification presence cle', array(
 			'provider' => $provider,
 			'has_key' => $has_key,
 		) );
@@ -235,7 +224,7 @@ class ApiKeyManager {
 		$result = \update_option( Constants::OPTION_SETTINGS, $settings );
 
 		if ( $result ) {
-			$this->logger->info( '[ApiKeyManager] Cle API supprimee', array( 'provider' => $provider ) );
+			LoggingHelper::info( '[ApiKeyManager] Cle API supprimee', array( 'provider' => $provider ) );
 			$this->log_audit( $provider, 'delete' );
 		}
 
@@ -255,7 +244,7 @@ class ApiKeyManager {
 
 		$endpoint = self::PROVIDERS[ $provider ]['endpoint'];
 
-		$this->logger->debug( '[ApiKeyManager] Endpoint recupere', array(
+		LoggingHelper::debug( '[ApiKeyManager] Endpoint recupere', array(
 			'provider' => $provider,
 			'endpoint' => $endpoint,
 		) );
@@ -305,7 +294,7 @@ class ApiKeyManager {
 		// Stocker IV avec les données chiffrées
 		$result = \base64_encode( $iv . '::' . $encrypted );
 
-		$this->logger->debug( '[ApiKeyManager] Donnees chiffrees', array(
+		LoggingHelper::debug( '[ApiKeyManager] Donnees chiffrees', array(
 			'cipher' => 'aes-256-cbc',
 			'iv_length' => strlen( $iv ),
 		) );
@@ -323,14 +312,14 @@ class ApiKeyManager {
 		$data = \base64_decode( $data );
 		
 		if ( strpos( $data, '::' ) === false ) {
-			$this->logger->warning( '[ApiKeyManager] Format de chiffrement invalide' );
+			LoggingHelper::warning( '[ApiKeyManager] Format de chiffrement invalide' );
 			return '';
 		}
 
 		list( $iv, $encrypted ) = explode( '::', $data, 2 );
 		$decrypted = \openssl_decrypt( $encrypted, 'aes-256-cbc', $this->encryption_key, 0, $iv );
 
-		$this->logger->debug( '[ApiKeyManager] Donnees dechiffrees' );
+		LoggingHelper::debug( '[ApiKeyManager] Donnees dechiffrees' );
 
 		return $decrypted;
 	}
@@ -347,7 +336,7 @@ class ApiKeyManager {
 		}
 
 		// Fallback (ne devrait jamais arriver en production)
-		$this->logger->warning( '[ApiKeyManager] AUTH_KEY non defini, utilisation fallback' );
+		LoggingHelper::warning( '[ApiKeyManager] AUTH_KEY non defini, utilisation fallback' );
 		return \substr( \hash( 'sha256', 'wcqf-fallback-key' ), 0, 32 );
 	}
 
@@ -400,7 +389,7 @@ class ApiKeyManager {
 
 		\update_option( 'wcqf_api_audit', $audit_log );
 
-		$this->logger->info( '[ApiKeyManager] Audit trail enregistre', $audit_data );
+		LoggingHelper::info( '[ApiKeyManager] Audit trail enregistre', $audit_data );
 	}
 
 	/**
@@ -425,7 +414,7 @@ class ApiKeyManager {
 	public function migrate_hardcoded_key( $provider, $hardcoded_key ) {
 		// Si clé déjà présente, ne rien faire
 		if ( $this->has_api_key( $provider ) ) {
-			$this->logger->info( '[ApiKeyManager] Migration sautee, cle deja presente', array(
+			LoggingHelper::info( '[ApiKeyManager] Migration sautee, cle deja presente', array(
 				'provider' => $provider,
 			) );
 			return false;
@@ -435,7 +424,7 @@ class ApiKeyManager {
 		$result = $this->set_api_key( $provider, $hardcoded_key );
 
 		if ( $result ) {
-			$this->logger->info( '[ApiKeyManager] Migration cle hardcodee vers BDD', array(
+			LoggingHelper::info( '[ApiKeyManager] Migration cle hardcodee vers BDD', array(
 				'provider' => $provider,
 				'key_preview' => $this->get_key_preview( $hardcoded_key ),
 			) );

@@ -11,7 +11,7 @@ namespace WcQualiopiFormation\Form\GravityForms;
 defined( 'ABSPATH' ) || exit;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Data\ProgressTracker;
 use WcQualiopiFormation\Form\Tracking\TrackingManager;
 use WcQualiopiFormation\Form\GravityForms\FieldMapper;
@@ -30,13 +30,6 @@ use WcQualiopiFormation\Security\TokenManager;
 class SubmissionHandler {
 
 	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
 	 * Instance du field mapper
 	 *
 	 * @var FieldMapper
@@ -52,13 +45,10 @@ class SubmissionHandler {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger           = $logger;
+	public function __construct() {
 		$this->field_mapper     = new FieldMapper();
-		$this->tracking_manager = new TrackingManager( $logger );
+		$this->tracking_manager = new TrackingManager();
 	}
 
 	/**
@@ -96,7 +86,7 @@ class SubmissionHandler {
 
 		if ( empty( $token ) ) {
 			$validation_result['is_valid'] = false;
-			$this->logger->error( 'Token missing in form submission', array( 'form_id' => $form['id'] ) );
+			LoggingHelper::error( 'Token missing in form submission', array( 'form_id' => $form['id'] ) );
 
 			// Ajouter message d'erreur global.
 			$validation_result['form']['validation_message'] = __( 'Erreur de validation : token manquant. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
@@ -108,7 +98,7 @@ class SubmissionHandler {
 		$token_parts = \WcQualiopiFormation\Security\Token\TokenGenerator::parse( $token );
 		if ( false === $token_parts ) {
 			$validation_result['is_valid'] = false;
-			$this->logger->error( 'Token parsing failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+			LoggingHelper::error( 'Token parsing failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
 			
 			// Ajouter message d'erreur global.
 			$validation_result['form']['validation_message'] = __( 'Erreur de validation : format de token invalide. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
@@ -120,7 +110,7 @@ class SubmissionHandler {
 		$decoded_payload = \WcQualiopiFormation\Security\Token\TokenGenerator::decode_payload( $token_parts['payload'] );
 		if ( false === $decoded_payload ) {
 			$validation_result['is_valid'] = false;
-			$this->logger->error( 'Token payload decoding failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+			LoggingHelper::error( 'Token payload decoding failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
 			
 			// Ajouter message d'erreur global.
 			$validation_result['form']['validation_message'] = __( 'Erreur de validation : contenu de token invalide. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
@@ -136,7 +126,7 @@ class SubmissionHandler {
 
 		if ( false === $token_data ) {
 			$validation_result['is_valid'] = false;
-			$this->logger->error( 'Token validation failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
+			LoggingHelper::error( 'Token validation failed', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
 
 			// Ajouter message d'erreur global.
 			$validation_result['form']['validation_message'] = __( 'Erreur de validation : token invalide ou expiré. Veuillez recharger la page.', Constants::TEXT_DOMAIN );
@@ -163,11 +153,11 @@ class SubmissionHandler {
 				$validation_result['is_valid'] = false;
 				$validation_result['form']     = $form;
 
-				$this->logger->warning( 'SIRET validation failed', array( 'siret' => $siret, 'form_id' => $form['id'] ) );
+				LoggingHelper::warning( 'SIRET validation failed', array( 'siret' => $siret, 'form_id' => $form['id'] ) );
 			}
 		}
 
-		$this->logger->info( 'Form validation completed', array(
+		LoggingHelper::info( 'Form validation completed', array(
 			'form_id'  => $form['id'],
 			'is_valid' => $validation_result['is_valid'],
 		) );
@@ -186,7 +176,7 @@ class SubmissionHandler {
 		$token = rgar( $entry, '9999' ); // ID champ token.
 
 		if ( empty( $token ) ) {
-			$this->logger->error( 'No token found in form submission', array( 'form_id' => $form['id'] ) );
+			LoggingHelper::error( 'No token found in form submission', array( 'form_id' => $form['id'] ) );
 			return;
 		}
 
@@ -207,7 +197,7 @@ class SubmissionHandler {
 
 		// 4. Audit (TODO: une fois AuditManager créé).
 
-		$this->logger->info( 'Form submission handled successfully', array(
+		LoggingHelper::info( 'Form submission handled successfully', array(
 			'token'    => substr( $token, 0, 10 ) . '...',
 			'form_id'  => $form['id'],
 			'entry_id' => $entry['id'],

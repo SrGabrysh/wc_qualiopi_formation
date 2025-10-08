@@ -8,7 +8,7 @@
 namespace WcQualiopiFormation\Admin\Logs;
 
 use WcQualiopiFormation\Core\Constants;
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -21,14 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LogsFilterManager {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Niveaux de logs autorisés
 	 *
 	 * @var array
@@ -52,11 +45,8 @@ class LogsFilterManager {
 
 	/**
 	 * Constructeur
-	 *
-	 * @param Logger $logger Instance du logger.
 	 */
-	public function __construct( Logger $logger ) {
-		$this->logger = $logger;
+	public function __construct() {
 	}
 
 	/**
@@ -98,7 +88,7 @@ class LogsFilterManager {
 			'limit'        => $limit,
 		);
 
-		$this->logger->debug( '[LogsFilterManager] Paramètres de filtres validés', $params );
+		LoggingHelper::debug( '[LogsFilterManager] Paramètres de filtres validés', $params );
 
 		return $params;
 	}
@@ -130,7 +120,7 @@ class LogsFilterManager {
 			}
 		}
 
-		$this->logger->debug(
+		LoggingHelper::debug(
 			'[LogsFilterManager] Filtre date appliqué',
 			array(
 				'period'        => $date_filter,

@@ -40,13 +40,52 @@ final class LoggingHelper {
 	 * Champs standard : timestamp, level, message, channel, context, request_id,
 	 * user_id, ip, php_version, wp_version, site_url, file, line, class, method,
 	 * duration_ms, memory_bytes.
+	 * 
+	 * [AJOUT 2025-10-08] Écrit aussi dans WooCommerce Logger pour affichage interface admin
 	 */
 	public static function log( string $level, string $message, array $context = [] ): void {
 		$record = self::build_record( $level, $message, $context );
 		$json   = self::to_single_line_json( $record );
 
-		// alimente error_log -> WP_DEBUG_LOG (si WP_DEBUG & WP_DEBUG_LOG actifs)
+		// 1. Écrire dans error_log -> WP_DEBUG_LOG (si WP_DEBUG & WP_DEBUG_LOG actifs)
 		@error_log( $json );
+
+		// 2. Écrire dans WooCommerce Logger -> fichier dédié wc-qualiopi-formation.log
+		self::log_to_woocommerce( $level, $json );
+	}
+
+	/**
+	 * Écrit le log dans WooCommerce Logger (fichier dédié)
+	 * 
+	 * Permet à l'interface admin de lire les logs depuis /wp-content/uploads/wc-logs/
+	 * Format: wc-qualiopi-formation-YYYY-MM-DD-hash.log
+	 * 
+	 * @param string $level   Niveau du log (debug, info, warning, error, critical)
+	 * @param string $message Message JSON formaté
+	 * @return void
+	 */
+	private static function log_to_woocommerce( string $level, string $message ): void {
+		// Vérifier que WooCommerce est disponible
+		if ( ! function_exists( 'wc_get_logger' ) ) {
+			return;
+		}
+
+		try {
+			$wc_logger = wc_get_logger();
+			
+			// WooCommerce attend les niveaux en minuscules
+			$wc_level = strtolower( $level );
+			
+			// Écrire dans le fichier dédié avec la source 'wc-qualiopi-formation'
+			$wc_logger->log( 
+				$wc_level, 
+				$message, 
+				array( 'source' => 'wc-qualiopi-formation' ) 
+			);
+		} catch ( \Exception $e ) {
+			// Silencieux - ne pas bloquer si WooCommerce Logger échoue
+			// Le log est déjà dans error_log de toute façon
+		}
 	}
 
 	/** Construit l'enregistrement enrichi. */

@@ -480,7 +480,9 @@ const WCQFTests = {
     this.fillField("10", "Gabriel.DUTEURTRE@Gmail.COM"); // Email majuscules → sera mis en minuscules
 
     console.log("📝 Formulaire pré-rempli avec des données valides");
-    console.log("✅ Prêt pour tester - Cliquez sur 'Vérifier SIRET' manuellement");
+    console.log(
+      "✅ Prêt pour tester - Cliquez sur 'Vérifier SIRET' manuellement"
+    );
     console.log(
       "💡 Ou lancez : WCQFTests.clickVerify() pour vérifier automatiquement"
     );
@@ -493,7 +495,9 @@ const WCQFTests = {
     console.log("📖 AIDE - WC QUALIOPI FORMATION TESTS");
     console.log("");
     console.log("🚀 UTILITAIRE DEV :");
-    console.log("  WCQFTests.quickFill()           - Remplir formulaire rapidement");
+    console.log(
+      "  WCQFTests.quickFill()           - Remplir formulaire rapidement"
+    );
     console.log("");
     console.log("COMMANDES DISPONIBLES :");
     console.log("  WCQFTests.runAll()              - Exécuter tous les tests");

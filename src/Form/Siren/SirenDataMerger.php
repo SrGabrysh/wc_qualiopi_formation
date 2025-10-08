@@ -10,21 +10,14 @@ namespace WcQualiopiFormation\Form\Siren;
 
 defined( 'ABSPATH' ) || exit;
 
-use WcQualiopiFormation\Utils\Logger;
+use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
  * Classe de fusion des données établissement + unité légale
  */
 class SirenDataMerger {
 
-	/**
-	 * Instance du logger
-	 *
-	 * @var Logger
-	 */
-	private $logger;
-
-	/**
+/**
 	 * Instance du validator
 	 *
 	 * @var SirenValidator
@@ -34,11 +27,9 @@ class SirenDataMerger {
 	/**
 	 * Constructeur
 	 *
-	 * @param Logger $logger Instance du logger.
 	 * @param SirenValidator $validator Instance du validator.
 	 */
-	public function __construct( Logger $logger, SirenValidator $validator ) {
-		$this->logger = $logger;
+	public function __construct( SirenValidator $validator ) {
 		$this->validator = $validator;
 	}
 
@@ -52,7 +43,7 @@ class SirenDataMerger {
 	 * @return array Données fusionnées et normalisées.
 	 */
 	public function merge( $etablissement_response, $unite_legale_response, $siret, $siren ) {
-		$this->logger->info( '[SirenDataMerger] merge DEBUT', array(
+		LoggingHelper::info( '[SirenDataMerger] merge DEBUT', array(
 			'etablissement_keys' => array_keys( $etablissement_response ),
 			'unite_legale_keys'  => array_keys( $unite_legale_response ),
 		) );
@@ -60,14 +51,14 @@ class SirenDataMerger {
 		$etablissement = $this->extract_etablissement( $etablissement_response );
 		$unite_legale  = $this->extract_unite_legale( $unite_legale_response );
 
-		$this->logger->debug( '[SirenDataMerger] Donnees extraites', array(
+		LoggingHelper::debug( '[SirenDataMerger] Donnees extraites', array(
 			'etablissement_keys' => array_keys( $etablissement ),
 			'unite_legale_keys'  => array_keys( $unite_legale ),
 		) );
 
 		$merged_data = $this->build_merged_data( $etablissement, $unite_legale, $siret, $siren );
 
-		$this->logger->info( '[SirenDataMerger] merge TERMINE', array(
+		LoggingHelper::info( '[SirenDataMerger] merge TERMINE', array(
 			'type_entreprise' => $merged_data['type_entreprise'],
 			'denomination'    => $merged_data['denomination'],
 		) );

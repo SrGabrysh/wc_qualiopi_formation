@@ -13,7 +13,10 @@ use WcQualiopiFormation\Helpers\SecurityHelper;
 use WcQualiopiFormation\Admin\Settings\GeneralTabRenderer;
 use WcQualiopiFormation\Admin\Settings\MappingTabRenderer;
 use WcQualiopiFormation\Admin\Settings\TrackingTabRenderer;
+use WcQualiopiFormation\Admin\Settings\PositioningTabRenderer;
+use WcQualiopiFormation\Admin\Settings\PositioningSettingsSaver;
 use WcQualiopiFormation\Admin\Settings\SettingsSaver;
+use WcQualiopiFormation\Data\Store\PositioningConfigStore;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -61,11 +64,25 @@ class SettingsPage {
 	private $tracking_renderer;
 
 	/**
+	 * Instance du renderer de l'onglet positioning
+	 *
+	 * @var PositioningTabRenderer
+	 */
+	private $positioning_renderer;
+
+	/**
 	 * Instance du gestionnaire de sauvegarde
 	 *
 	 * @var SettingsSaver
 	 */
 	private $settings_saver;
+
+	/**
+	 * Instance du gestionnaire de sauvegarde positioning
+	 *
+	 * @var PositioningSettingsSaver
+	 */
+	private $positioning_saver;
 
 	/**
 	 * Constructeur
@@ -78,7 +95,9 @@ class SettingsPage {
 		$this->general_renderer = new GeneralTabRenderer();
 		$this->mapping_renderer = new MappingTabRenderer( $form_manager );
 		$this->tracking_renderer = new TrackingTabRenderer( $form_manager );
+		$this->positioning_renderer = new PositioningTabRenderer( new PositioningConfigStore() );
 		$this->settings_saver = new SettingsSaver();
+		$this->positioning_saver = new PositioningSettingsSaver();
 	}
 
 	/**
@@ -121,6 +140,10 @@ class SettingsPage {
 				   class="nav-tab <?php echo $active_tab === 'tracking' ? 'nav-tab-active' : ''; ?>">
 					<?php \esc_html_e( 'Statistiques', Constants::TEXT_DOMAIN ); ?>
 				</a>
+				<a href="?page=wcqf-settings&tab=positioning" 
+				   class="nav-tab <?php echo $active_tab === 'positioning' ? 'nav-tab-active' : ''; ?>">
+					<?php \esc_html_e( 'Test de positionnement', Constants::TEXT_DOMAIN ); ?>
+				</a>
 				<a href="?page=wcqf-settings&tab=logs" 
 				   class="nav-tab <?php echo $active_tab === 'logs' ? 'nav-tab-active' : ''; ?>">
 					<?php \esc_html_e( 'Logs', Constants::TEXT_DOMAIN ); ?>
@@ -139,6 +162,9 @@ class SettingsPage {
 						break;
 					case 'tracking':
 						$this->render_tracking_tab();
+						break;
+					case 'positioning':
+						$this->render_positioning_tab();
 						break;
 					case 'logs':
 						$this->render_logs_tab();
@@ -197,6 +223,38 @@ class SettingsPage {
 	}
 
 	/**
+	 * Affiche l'onglet Test de positionnement
+	 *
+	 * @return void
+	 */
+	private function render_positioning_tab() {
+		$editing_verdict = null;
+		
+		// Traiter la sauvegarde si demandée
+		if ( $_SERVER['REQUEST_METHOD'] === 'POST' ) {
+			$result = $this->positioning_saver->save_config();
+			if ( \is_wp_error( $result ) ) {
+				echo AdminUi::notice( $result->get_error_message(), 'error' );
+			} elseif ( $result === true ) {
+				echo AdminUi::notice(
+					\__( 'Configuration enregistrée avec succès', Constants::TEXT_DOMAIN ),
+					'success'
+				);
+			}
+		}
+		
+		// Récupérer le verdict à éditer si demandé
+		if ( isset( $_POST['wcqf_edit_verdict'] ) ) {
+			$editing_verdict = $this->positioning_saver->get_verdict_for_edit( 
+				\sanitize_text_field( \wp_unslash( $_POST['wcqf_edit_verdict'] ) )
+			);
+		}
+
+		// Afficher l'onglet
+		$this->positioning_renderer->render( $editing_verdict );
+	}
+
+	/**
 	 * Affiche l'onglet Logs
 	 *
 	 * @return void
@@ -212,7 +270,7 @@ class SettingsPage {
 	 */
 	private function get_active_tab() {
 		$tab = sanitize_text_field( wp_unslash( $_GET['tab'] ?? 'general' ) );
-		$allowed_tabs = array( 'general', 'mapping', 'tracking', 'logs' );
+		$allowed_tabs = array( 'general', 'mapping', 'tracking', 'positioning', 'logs' );
 		
 		return in_array( $tab, $allowed_tabs, true ) ? $tab : 'general';
 	}

@@ -438,3 +438,107 @@ input[type="password"].regular-text {
 .wcqf-form-selector select {
   min-width: 300px;
 }
+
+/* ============================================================================
+   Tooltips System
+   ============================================================================ */
+
+.wcqf-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.wcqf-tooltip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  background: var(--wcqf-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: help;
+  transition: all 0.2s ease;
+}
+
+.wcqf-tooltip__icon:hover {
+  background: #1d4ed8;
+  transform: scale(1.1);
+}
+
+.wcqf-tooltip__content {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%);
+  background: #1f2937;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  min-width: 250px;
+  max-width: 350px;
+  white-space: normal;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 9999;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  pointer-events: none;
+}
+
+/* Flèche du tooltip */
+.wcqf-tooltip__content::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: #1f2937;
+}
+
+/* Affichage au hover */
+.wcqf-tooltip:hover .wcqf-tooltip__content {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Support du HTML dans les tooltips */
+.wcqf-tooltip__content strong {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.wcqf-tooltip__content code {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  color: #fbbf24;
+}
+
+.wcqf-tooltip__content ul {
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.wcqf-tooltip__content li {
+  margin: 4px 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wcqf-tooltip__content {
+    min-width: 200px;
+    max-width: 280px;
+    font-size: 12px;
+  }
+}

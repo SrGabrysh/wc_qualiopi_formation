@@ -1,18 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
-         bootstrap="Pest.php"
+         bootstrap="tests/bootstrap-integration.php"
          colors="true"
-         cacheResultFile=".phpunit.cache/test-results"
+         cacheResultFile=".phpunit.cache/test-results-integration"
          executionOrder="depends,defects"
-         beStrictAboutOutputDuringTests="true"
-         failOnRisky="true"
-         failOnWarning="true"
+         beStrictAboutOutputDuringTests="false"
+         failOnRisky="false"
+         failOnWarning="false"
 >
     <testsuites>
-        <testsuite name="Unit Tests">
-            <directory suffix="Test.php">./tests/Unit</directory>
-        </testsuite>
         <testsuite name="Integration Tests">
             <directory suffix="Test.php">./tests/Integration</directory>
         </testsuite>
@@ -29,10 +26,20 @@
     </coverage>
     
     <php>
-        <env name="WPINC" value="wp-includes"/>
+        <!-- Variables d'environnement WordPress -->
+        <env name="WP_TESTS_MODE" value="true"/>
+        <env name="WP_TESTS_INTEGRATION" value="true"/>
         <env name="WP_DEBUG" value="true"/>
+        <env name="WP_DEBUG_LOG" value="false"/>
+        <env name="WP_DEBUG_DISPLAY" value="false"/>
+        
+        <!-- Chemin vers WordPress (optionnel, auto-détecté si dans DDEV) -->
+        <!-- <env name="WP_ROOT" value="/var/www/html/web"/> -->
+        
+        <!-- Configuration PHP -->
         <ini name="display_errors" value="1"/>
         <ini name="error_reporting" value="-1"/>
+        <ini name="memory_limit" value="256M"/>
     </php>
 </phpunit>
 

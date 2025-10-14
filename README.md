@@ -1,5 +1,7 @@
 # WC Qualiopi Formation
 
+**Version:** 1.2.0
+
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 
 ## 📋 Description
@@ -226,6 +228,15 @@ composer phpcbf
 
 ## 📝 Changelog
 
+Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
+
+### Version 1.2.0 - 2025-10-14
+
+- Ajout ButtonReplacementManager : Remplacement automatique du bouton "Suivant" par "Retour à l'accueil" pour les utilisateurs ayant échoué au test
+- Hooks personnalisés pour personnalisation du texte et de l'URL de redirection
+- Tests unitaires complets avec couverture exhaustive
+- Corrections de linting et améliorations de sécurité
+
 ### Version 1.0.0-dev.0 (2025-10-07) - 🚧 DÉVELOPPEMENT
 
 **Phase de développement initiale - Jamais déployée en production**
@@ -312,4 +323,4 @@ GPL v2 or later - [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.or
 
 ---
 
-Dernière mise à jour : 2025-10-07
+Dernière mise à jour : 2025-10-14

@@ -13,16 +13,21 @@ defined( 'ABSPATH' ) || exit;
 use WcQualiopiFormation\Helpers\LoggingHelper;
 
 /**
- * Classe de gestion des transitions de pages
+ * Classe de gestion de la transition du test de positionnement
  *
- * Responsabilité unique : Gérer les passages de pages dans les formulaires GF
- * et récupérer le score de positionnement pour déterminer le parcours de formation.
+ * Responsabilité unique : Traiter UNIQUEMENT la transition page 2 → 3
+ * pour récupérer le score de positionnement et déterminer le parcours de formation.
+ *
+ * Architecture Manager/Handler (depuis v1.1.0) :
+ * - PageTransitionManager détecte TOUTES les transitions
+ * - PageTransitionHandler écoute l'action et traite son cas spécifique
  *
  * Fonctionnalités :
- * - Hook sur le passage de page GF (gform_post_paging)
+ * - Écoute l'action 'wcqf_page_transition' (déclenchée par PageTransitionManager)
+ * - Filtre uniquement la transition 2→3 en direction forward
  * - Récupération du score de positionnement (champ ID 27)
  * - Détermination du parcours de formation selon le score
- * - Déclenchement d'actions WordPress personnalisées
+ * - Déclenchement d'action WordPress 'wcqf_test_completed'
  */
 class PageTransitionHandler {
 
@@ -71,6 +76,9 @@ class PageTransitionHandler {
 	/**
 	 * Constructeur
 	 *
+	 * Note : init_hooks() doit être appelé explicitement depuis FormManager
+	 * pour cohérence avec les autres handlers (convention du plugin).
+	 *
 	 * @param CalculationRetriever $calculation_retriever Instance du retriever.
 	 */
 	public function __construct( CalculationRetriever $calculation_retriever ) {
@@ -84,75 +92,57 @@ class PageTransitionHandler {
 				'score_field' => self::SCORE_FIELD_ID,
 			)
 		);
-		
-		$this->init_hooks();
 	}
 
 	/**
-	 * Initialise les hooks Gravity Forms
+	 * Initialise les hooks WordPress
+	 *
+	 * Écoute l'action wcqf_page_transition déclenchée par PageTransitionManager
+	 * au lieu de s'abonner directement à gform_post_paging.
+	 *
+	 * @since 1.1.0 Refactorisé pour utiliser PageTransitionManager
 	 */
 	public function init_hooks() {
-		// Hook après validation de page (avant affichage page suivante)
-		add_action( 'gform_post_paging', array( $this, 'on_page_transition' ), 10, 3 );
+		// Écouter l'action du Manager
+		add_action( 'wcqf_page_transition', array( $this, 'handle_test_transition' ), 10, 1 );
 
-		LoggingHelper::info( '[PageTransitionHandler] Hooks enregistrés', array(
-			'hook'        => 'gform_post_paging',
+		LoggingHelper::debug( '[PageTransitionHandler] Hooks enregistres', array(
+			'hook'        => 'wcqf_page_transition',
 			'source_page' => self::SOURCE_PAGE,
 			'target_page' => self::TARGET_PAGE,
 		) );
 	}
 
 	/**
-	 * Appelé lors du passage d'une page à l'autre
+	 * Gère la transition spécifique du test de positionnement (page 2 → 3)
 	 *
-	 * Hook Gravity Forms : gform_post_paging
-	 * Déclenché après validation d'une page, avant affichage de la suivante.
+	 * Écoute l'action wcqf_page_transition et filtre uniquement la transition
+	 * qui nous intéresse (test de positionnement terminé).
 	 *
-	 * @param array $form Formulaire GF complet.
-	 * @param int   $source_page_number Numéro de la page source.
-	 * @param int   $current_page_number Numéro de la page cible.
+	 * Simplifié depuis v1.1.0 : Le Manager a déjà validé le contexte et
+	 * récupéré les données de soumission.
+	 *
+	 * @since 1.1.0 Refactorisé pour utiliser l'action du Manager
+	 * @param array $transition_data Données de transition du Manager.
+	 * @return void
 	 */
-	public function on_page_transition( $form, $source_page_number, $current_page_number ) {
-		// Convertir en int pour éviter les problèmes de comparaison string vs int
-		$source_page_number  = (int) $source_page_number;
-		$current_page_number = (int) $current_page_number;
-		
-		// Log détaillé de TOUTES les transitions pour diagnostic
-		LoggingHelper::info( '[PageTransitionHandler] ===== TRANSITION DE PAGE DÉTECTÉE =====', array(
-			'timestamp'     => current_time( 'mysql' ),
-			'form_id'       => $form['id'],
-			'form_title'    => $form['title'] ?? 'N/A',
-			'from_page'     => $source_page_number,
-			'to_page'       => $current_page_number,
-			'expected_from' => self::SOURCE_PAGE,
-			'expected_to'   => self::TARGET_PAGE,
-			'is_match'      => ( $source_page_number === self::SOURCE_PAGE && $current_page_number === self::TARGET_PAGE ),
-			'user_id'       => get_current_user_id(),
-			'user_ip'       => $_SERVER['REMOTE_ADDR'] ?? 'unknown',
-			'user_agent'    => $_SERVER['HTTP_USER_AGENT'] ?? 'unknown',
-		) );
-
-		// Vérifier si c'est la transition qui nous intéresse (2 → 3)
-		if ( $source_page_number !== self::SOURCE_PAGE || $current_page_number !== self::TARGET_PAGE ) {
-			LoggingHelper::debug( '[PageTransitionHandler] Transition non concernée, ignorée', array(
-				'reason' => sprintf(
-					'Source page %d != %d OU Target page %d != %d',
-					$source_page_number,
-					self::SOURCE_PAGE,
-					$current_page_number,
-					self::TARGET_PAGE
-				),
-			) );
+	public function handle_test_transition( array $transition_data ): void {
+		// Filtrer : uniquement transition 2 → 3 en direction forward
+		if ( $transition_data['from_page'] !== self::SOURCE_PAGE 
+			|| $transition_data['to_page'] !== self::TARGET_PAGE
+			|| $transition_data['direction'] !== 'forward' ) {
+			// Ignorer silencieusement les autres transitions
 			return;
 		}
 
-		LoggingHelper::warning( '[PageTransitionHandler] 🎯 TRANSITION CRITIQUE DÉTECTÉE ! Test de positionnement terminé', array(
-			'form_id'    => $form['id'],
-			'transition' => sprintf( '%d → %d', $source_page_number, $current_page_number ),
+		LoggingHelper::info( '[PageTransitionHandler] Test de positionnement termine', array(
+			'form_id'    => $transition_data['form_id'],
+			'entry_id'   => $transition_data['entry_id'],
+			'transition' => sprintf( '%d -> %d', $transition_data['from_page'], $transition_data['to_page'] ),
 		) );
 
 		// Gérer la complétion du test
-		$this->handle_test_completion( $form );
+		$this->handle_test_completion( $transition_data );
 	}
 
 	/**
@@ -160,35 +150,23 @@ class PageTransitionHandler {
 	 *
 	 * Récupère le score calculé et détermine le parcours de formation.
 	 *
-	 * @param array $form Formulaire GF.
+	 * @since 1.1.0 Simplifié : les données sont déjà dans $transition_data
+	 * @param array $transition_data Données de transition du Manager.
+	 * @return void
 	 */
-	private function handle_test_completion( $form ) {
+	private function handle_test_completion( array $transition_data ): void {
 		LoggingHelper::info( '[PageTransitionHandler] === DÉBUT handle_test_completion ===' );
 
-		// Récupérer les données de soumission en cours (partielle)
-		if ( ! class_exists( 'GFFormsModel' ) ) {
-			LoggingHelper::error( '[PageTransitionHandler] ❌ GFFormsModel non disponible' );
-			return;
-		}
+		// Les données sont déjà validées par le Manager
+		$form            = $transition_data['form'];
+		$submission_data = $transition_data['submission_data'];
 
-		LoggingHelper::debug( '[PageTransitionHandler] GFFormsModel disponible, récupération lead...' );
-		$submission_data = \GFFormsModel::get_current_lead();
-
-		if ( ! $submission_data || ! is_array( $submission_data ) ) {
-			LoggingHelper::error( '[PageTransitionHandler] ❌ Impossible de récupérer les données de soumission', array(
-				'form_id'         => $form['id'],
-				'submission_data' => $submission_data,
-				'type'            => gettype( $submission_data ),
-			) );
-			return;
-		}
-
-		LoggingHelper::info( '[PageTransitionHandler] ✅ Données de soumission récupérées', array(
-			'form_id'         => $form['id'],
-			'entry_id'        => $submission_data['id'] ?? 'partial',
-			'fields_count'    => count( $submission_data ),
-			'has_field_27'    => isset( $submission_data[ self::SCORE_FIELD_ID ] ),
-			'field_27_value'  => $submission_data[ self::SCORE_FIELD_ID ] ?? 'N/A',
+		LoggingHelper::debug( '[PageTransitionHandler] Données reçues du Manager', array(
+			'form_id'        => $transition_data['form_id'],
+			'entry_id'       => $transition_data['entry_id'],
+			'fields_count'   => count( $submission_data ),
+			'has_field_27'   => isset( $submission_data[ self::SCORE_FIELD_ID ] ),
+			'field_27_value' => $submission_data[ self::SCORE_FIELD_ID ] ?? 'N/A',
 		) );
 
 		// Récupérer le score calculé via CalculationRetriever
@@ -197,21 +175,21 @@ class PageTransitionHandler {
 		) );
 
 		$score = $this->calculation_retriever->get_calculated_value(
-			$form['id'],
+			$transition_data['form_id'],
 			$submission_data,
 			self::SCORE_FIELD_ID
 		);
 
 		if ( $score === false ) {
-			LoggingHelper::error( '[PageTransitionHandler] ❌ Échec récupération du score', array(
-				'form_id'  => $form['id'],
+			LoggingHelper::error( '[PageTransitionHandler] Echec recuperation du score', array(
+				'form_id'  => $transition_data['form_id'],
 				'field_id' => self::SCORE_FIELD_ID,
 			) );
 			return;
 		}
 
-		LoggingHelper::warning( '[PageTransitionHandler] ✅✅✅ SCORE DE POSITIONNEMENT RÉCUPÉRÉ !', array(
-			'form_id'  => $form['id'],
+		LoggingHelper::info( '[PageTransitionHandler] Score de positionnement recupere', array(
+			'form_id'  => $transition_data['form_id'],
 			'score'    => $score,
 			'type'     => gettype( $score ),
 			'field_id' => self::SCORE_FIELD_ID,

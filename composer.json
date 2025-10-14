@@ -26,6 +26,8 @@
     "ext-openssl": "*"
   },
   "require-dev": {
+    "brain/monkey": "^2.6",
+    "mockery/mockery": "^1.6",
     "pestphp/pest": "*",
     "phpcompatibility/php-compatibility": "^9.3",
     "phpunit/phpunit": "^9.5",
@@ -43,7 +45,13 @@
     }
   },
   "scripts": {
-    "test": "phpunit",
+    "test": "pest",
+    "test:unit": "pest --testsuite='Unit Tests'",
+    "test:integration": "pest --configuration=phpunit-integration.xml",
+    "test:all": "composer test:unit && composer test:integration",
+    "test:coverage": "pest --coverage",
+    "test:coverage:integration": "pest --configuration=phpunit-integration.xml --coverage",
+    "test:watch": "pest --watch",
     "phpcs": "phpcs --standard=WordPress src/",
     "phpcbf": "phpcbf --standard=WordPress src/"
   },

@@ -48,11 +48,13 @@ final class AdminUi {
 		return '<button class="' . esc_attr( implode( ' ', $classes ) ) . '" ' . $attr_str . '>' . esc_html( $label ) . '</button>';
 	}
 
-	public static function button_primary( string $label, string $name = '' ): string {
+	public static function button_primary( string $label, string $name = '', array $extra_attrs = array() ): string {
 		$attrs = array( 'type' => 'submit' );
 		if ( ! empty( $name ) ) {
 			$attrs['name'] = $name;
 		}
+		// Fusionner les attributs supplémentaires
+		$attrs = array_merge( $attrs, $extra_attrs );
 		return self::button( $label, 'primary', $attrs );
 	}
 
@@ -61,12 +63,13 @@ final class AdminUi {
 		return '<div class="wcqf-notice wcqf-notice--' . esc_attr( $type ) . '">' . esc_html( $message ) . '</div>';
 	}
 
-	public static function select( string $name, array $options, string $selected = '', array $attrs = array() ): string {
+	public static function select( string $name, array $options, $selected = '', array $attrs = array() ): string {
 		$attr_str = self::attrs( $attrs );
 		$html = '<select name="' . esc_attr( $name ) . '" ' . $attr_str . '>';
 		
 		foreach ( $options as $value => $label ) {
-			$is_selected = ( $value === $selected ) ? ' selected="selected"' : '';
+			// Comparaison non-stricte pour gérer int et string (fix: dropdown GF se réinitialise)
+			$is_selected = ( (string) $value === (string) $selected ) ? ' selected="selected"' : '';
 			$html .= '<option value="' . esc_attr( $value ) . '"' . $is_selected . '>' . esc_html( $label ) . '</option>';
 		}
 		
@@ -94,6 +97,38 @@ final class AdminUi {
 		}
 		$html .= '</tr>';
 		return $html;
+	}
+
+	/**
+	 * Génère une icône tooltip avec bulle d'aide
+	 *
+	 * @param string $content Contenu du tooltip (HTML autorisé).
+	 * @return string HTML du tooltip.
+	 */
+	public static function tooltip( string $content ): string {
+		return '<span class="wcqf-tooltip">
+			<span class="wcqf-tooltip__icon">?</span>
+			<span class="wcqf-tooltip__content">' . $content . '</span>
+		</span>';
+	}
+
+	/**
+	 * Génère un champ avec label ET tooltip
+	 *
+	 * @param string      $label      Label du champ.
+	 * @param string      $input_html HTML de l'input.
+	 * @param string|null $help       Texte d'aide en dessous du champ.
+	 * @param string|null $tooltip    Contenu du tooltip (à côté du label).
+	 * @return string HTML complet.
+	 */
+	public static function field_row_with_tooltip( string $label, string $input_html, ?string $help = null, ?string $tooltip = null ): string {
+		$help_html = $help ? '<p class="wcqf-help">' . esc_html( $help ) . '</p>' : '';
+		$tooltip_html = $tooltip ? ' ' . self::tooltip( $tooltip ) : '';
+		
+		return '<div class="wcqf-field">'
+			. '<label class="wcqf-field__label">' . esc_html( $label ) . $tooltip_html . '</label>'
+			. '<div class="wcqf-field__control">' . $input_html . $help_html . '</div>'
+		. '</div>';
 	}
 
 	private static function attrs( array $attrs ): string {

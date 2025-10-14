@@ -1,0 +1,12 @@
+{
+  "redefinable-internals": [
+    "class_exists",
+    "function_exists",
+    "method_exists",
+    "interface_exists",
+    "trait_exists",
+    "is_callable",
+    "time",
+    "date"
+  ]
+}

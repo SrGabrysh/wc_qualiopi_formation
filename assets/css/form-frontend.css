@@ -1,0 +1,167 @@
+/**
+ * Form Frontend Styles - Gravity Forms
+ * 
+ * @package WcQualiopiFormation
+ * @since 1.1.0
+ */
+
+/* ============================================================================
+   Test Positioning Results Styles - Design TB-Formation
+   Couleur principale : #3279a8 (Bleu TB-Formation)
+   ============================================================================ */
+
+/* Conteneur résultat test - Design sobre et professionnel */
+.wcqf-test-result {
+  padding: 24px;
+  margin: 24px 0;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+}
+
+/* Score - Style épuré */
+.wcqf-test-result__score {
+  display: block;
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 16px;
+  color: #3279a8;
+  font-weight: 500;
+}
+
+.wcqf-test-result__emoji {
+  display: none; /* Supprimer l'émoticône cible */
+}
+
+.wcqf-test-result__label {
+  color: #3279a8;
+}
+
+.wcqf-test-result__label strong {
+  font-weight: 600;
+  color: #3279a8;
+}
+
+/* Verdict - Layout horizontal élégant */
+.wcqf-test-result__verdict {
+  display: flex;
+  align-items: flex-start;
+  font-size: 16px;
+  font-weight: 400;
+  gap: 12px;
+  line-height: 1.6;
+}
+
+/* Icône SVG - Petite et discrète */
+.wcqf-verdict-icon {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px !important;
+  min-height: 24px !important;
+  max-width: 24px !important;
+  max-height: 24px !important;
+  flex-shrink: 0 !important;
+  display: inline-block !important;
+  margin-top: 2px;
+}
+
+.wcqf-verdict-text {
+  flex: 1;
+  color: #333333;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+/* Variante ADMISSION - Vert discret */
+.wcqf-verdict--admitted {
+  border-left: 4px solid #22c55e;
+  background: #ffffff;
+}
+
+.wcqf-verdict--admitted .wcqf-test-result__score {
+  color: #3279a8;
+}
+
+.wcqf-verdict--admitted .wcqf-verdict-icon {
+  color: #22c55e;
+}
+
+/* Variante ACCOMPAGNEMENT RENFORCÉ - Orange doux */
+.wcqf-verdict--reinforced {
+  border-left: 4px solid #f59e0b;
+  background: #ffffff;
+}
+
+.wcqf-verdict--reinforced .wcqf-test-result__score {
+  color: #3279a8;
+}
+
+.wcqf-verdict--reinforced .wcqf-verdict-icon {
+  color: #f59e0b;
+}
+
+/* Variante REFUS - Gris neutre */
+.wcqf-verdict--refused {
+  border-left: 4px solid #94a3b8;
+  background: #ffffff;
+}
+
+.wcqf-verdict--refused .wcqf-test-result__score {
+  color: #3279a8;
+}
+
+.wcqf-verdict--refused .wcqf-verdict-icon {
+  color: #94a3b8;
+}
+
+/* Erreur */
+.wcqf-test-result--error {
+  border-left: 4px solid #94a3b8;
+  background: #ffffff;
+}
+
+.wcqf-test-result--error .wcqf-test-result__score {
+  color: #64748b;
+}
+
+.wcqf-test-result--error .wcqf-verdict-text {
+  color: #64748b;
+}
+
+.wcqf-test-result--error .wcqf-verdict-icon {
+  color: #94a3b8;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wcqf-test-result {
+    padding: 20px;
+    margin: 20px 0;
+  }
+
+  .wcqf-test-result__score {
+    font-size: 15px;
+    margin-bottom: 14px;
+    padding-bottom: 14px;
+  }
+
+  .wcqf-test-result__verdict {
+    font-size: 15px;
+  }
+
+  .wcqf-verdict-text {
+    font-size: 14px;
+  }
+
+  .wcqf-verdict-icon {
+    width: 20px !important;
+    height: 20px !important;
+    min-width: 20px !important;
+    min-height: 20px !important;
+    max-width: 20px !important;
+    max-height: 20px !important;
+  }
+}

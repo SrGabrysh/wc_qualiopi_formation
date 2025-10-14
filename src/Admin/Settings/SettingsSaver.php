@@ -119,7 +119,7 @@ class SettingsSaver {
 			$field_name = 'api_key_' . $provider_id;
 			
 			if ( isset( $raw_settings[ $field_name ] ) ) {
-				$api_key = \trim( SanitizationHelper::sanitize_text_field( $raw_settings[ $field_name ] ) );
+				$api_key = \trim( \sanitize_text_field( $raw_settings[ $field_name ] ) );
 				
 				// Si clé non vide, la sauvegarder via ApiKeyManager (chiffrée)
 				if ( ! empty( $api_key ) ) {
@@ -198,7 +198,7 @@ class SettingsSaver {
 			foreach ( self::DEFAULT_MAPPING as $field_key => $default_value ) {
 				if ( isset( $mapping[ $field_key ] ) ) {
 					// Sanitizer la valeur (format : "1" ou "8.3" ou vide)
-					$value = SanitizationHelper::sanitize_text_field( $mapping[ $field_key ] );
+					$value = \sanitize_text_field( $mapping[ $field_key ] );
 					$sanitized[ $form_id ][ $field_key ] = $value;
 				} else {
 					// Utiliser la valeur par défaut si non fournie

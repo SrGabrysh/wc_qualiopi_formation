@@ -80,3 +80,138 @@
     transform: translateY(0);
   }
 }
+
+/* ============================================================================
+   Test Positioning Results Styles
+   ============================================================================ */
+
+/* Conteneur résultat test */
+.wcqf-test-result {
+  padding: 20px;
+  margin: 20px 0;
+  border-radius: 8px;
+  border: 2px solid #ddd;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+}
+
+/* Score */
+.wcqf-test-result__score {
+  display: flex;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.wcqf-test-result__emoji {
+  font-size: 28px;
+  margin-right: 10px;
+}
+
+.wcqf-test-result__label {
+  color: #333;
+}
+
+/* Verdict */
+.wcqf-test-result__verdict {
+  display: flex;
+  align-items: center;
+  font-size: 20px;
+  font-weight: bold;
+  gap: 12px;
+}
+
+.wcqf-verdict-icon {
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  max-width: 32px !important;
+  max-height: 32px !important;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+.wcqf-verdict-text {
+  flex: 1;
+}
+
+/* Variantes couleurs - ADMISSION */
+.wcqf-verdict--admitted {
+  border-color: #10b981;
+  background: #d1fae5;
+}
+
+.wcqf-verdict--admitted .wcqf-verdict-text {
+  color: #065f46;
+}
+
+.wcqf-verdict--admitted .wcqf-verdict-icon {
+  color: #10b981;
+}
+
+/* Variantes couleurs - ACCOMPAGNEMENT RENFORCÉ */
+.wcqf-verdict--reinforced {
+  border-color: #f59e0b;
+  background: #fef3c7;
+}
+
+.wcqf-verdict--reinforced .wcqf-verdict-text {
+  color: #92400e;
+}
+
+.wcqf-verdict--reinforced .wcqf-verdict-icon {
+  color: #f59e0b;
+}
+
+/* Variantes couleurs - REFUS */
+.wcqf-verdict--refused {
+  border-color: #ef4444;
+  background: #fee2e2;
+}
+
+.wcqf-verdict--refused .wcqf-verdict-text {
+  color: #991b1b;
+}
+
+.wcqf-verdict--refused .wcqf-verdict-icon {
+  color: #ef4444;
+}
+
+/* Erreur */
+.wcqf-test-result--error {
+  border-color: #6b7280;
+  background: #f3f4f6;
+}
+
+.wcqf-test-result--error .wcqf-verdict-text {
+  color: #374151;
+}
+
+.wcqf-test-result--error .wcqf-verdict-icon {
+  color: #6b7280;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .wcqf-test-result {
+    padding: 15px;
+  }
+
+  .wcqf-test-result__score {
+    font-size: 16px;
+  }
+
+  .wcqf-test-result__verdict {
+    font-size: 18px;
+  }
+
+  .wcqf-verdict-icon {
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    min-height: 28px !important;
+    max-width: 28px !important;
+    max-height: 28px !important;
+  }
+}

@@ -1,6 +1,6 @@
 # WC Qualiopi Formation
 
-**Version:** 1.2.0
+**Version:** 1.2.1
 
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 
@@ -229,6 +229,13 @@ composer phpcbf
 ## 📝 Changelog
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
+
+### Version 1.2.1 - 2025-10-14
+
+- Correction race condition dans la sauvegarde des clés API (SettingsSaver)
+- Les clés API persistent maintenant correctement en base de données
+- Affichage correct du placeholder "**\*\*\*\***" dans l'interface admin
+- Ajout de logs détaillés pour faciliter le débogage
 
 ### Version 1.2.0 - 2025-10-14
 

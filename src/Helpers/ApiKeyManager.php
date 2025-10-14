@@ -36,7 +36,7 @@ class ApiKeyManager {
 	 */
 	private static $instance = null;
 
-/**
+	/**
 	 * Configuration des providers API
 	 *
 	 * @var array
@@ -61,6 +61,11 @@ class ApiKeyManager {
 			'name'     => 'Monday.com API',
 			'endpoint' => 'https://api.monday.com/v2',
 			'env_key'  => 'WCQF_MONDAY_API_KEY',
+		),
+		'yousign' => array(
+			'name'     => 'Yousign API',
+			'endpoint' => 'https://api.yousign.com/v3',
+			'env_key'  => 'WCQF_YOUSIGN_API_KEY',
 		),
 	);
 
@@ -125,8 +130,20 @@ class ApiKeyManager {
 		$settings = \get_option( Constants::OPTION_SETTINGS, array() );
 		$encrypted_key = $settings['api_keys'][ $provider ] ?? '';
 
+		LoggingHelper::debug( '[ApiKeyManager] Recherche cle API en BDD', array(
+			'provider' => $provider,
+			'settings_keys' => array_keys( $settings ),
+			'api_keys_present' => isset( $settings['api_keys'] ),
+			'api_keys_count' => isset( $settings['api_keys'] ) ? count( $settings['api_keys'] ) : 0,
+			'encrypted_key_length' => strlen( $encrypted_key ),
+			'api_keys_structure' => isset( $settings['api_keys'] ) ? array_keys( $settings['api_keys'] ) : 'N/A',
+		) );
+
 		if ( empty( $encrypted_key ) ) {
-			LoggingHelper::debug( '[ApiKeyManager] Aucune cle API trouvee', array( 'provider' => $provider ) );
+			LoggingHelper::debug( '[ApiKeyManager] Aucune cle API trouvee', array( 
+				'provider' => $provider,
+				'api_keys_structure' => isset( $settings['api_keys'] ) ? array_keys( $settings['api_keys'] ) : 'N/A',
+			) );
 			return null;
 		}
 
@@ -166,6 +183,12 @@ class ApiKeyManager {
 
 		// Sauvegarder en base de données
 		$settings = \get_option( Constants::OPTION_SETTINGS, array() );
+		
+		// [CORRECTION 2025-10-14] S'assurer que la structure api_keys existe
+		if ( ! isset( $settings['api_keys'] ) ) {
+			$settings['api_keys'] = array();
+		}
+		
 		$settings['api_keys'][ $provider ] = $encrypted_key;
 
 		$result = \update_option( Constants::OPTION_SETTINGS, $settings );
@@ -174,6 +197,7 @@ class ApiKeyManager {
 			LoggingHelper::info( '[ApiKeyManager] Cle API sauvegardee', array(
 				'provider' => $provider,
 				'key_preview' => $this->get_key_preview( $api_key ),
+				'api_keys_structure' => array_keys( $settings['api_keys'] ),
 			) );
 
 			// Audit trail

@@ -7,6 +7,16 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.2.1] - 2025-10-14
+
+### Fixed
+
+- **Race condition dans SettingsSaver** : Correction du bug qui écrasait les clés API fraîchement sauvegardées lors de la fusion des settings
+  - Récupération des settings déplacée APRÈS la sauvegarde des clés API par ApiKeyManager
+  - Les clés API persistent maintenant correctement en base de données
+  - L'interface admin affiche correctement le placeholder "**\*\*\*\***" pour les clés existantes
+- Ajout de logs détaillés pour faciliter le débogage de la sauvegarde des clés API
+
 ## [1.2.0] - 2025-10-14
 
 ### Added

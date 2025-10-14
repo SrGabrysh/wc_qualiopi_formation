@@ -95,10 +95,12 @@ class GeneralTabRenderer {
 			'enable_tracking' => $settings['enable_tracking'] ?? 1,
 		);
 
-		// Ajouter les valeurs des clés API (déchiffrées pour affichage)
+		// Ajouter les valeurs des clés API avec placeholder si clé existante
 		foreach ( $providers as $provider_id => $provider_data ) {
-			$api_key = $api_key_manager->get_api_key( $provider_id );
-			$values[ 'api_key_' . $provider_id ] = $api_key ?? '';
+			$has_key = $api_key_manager->has_api_key( $provider_id );
+			// Si clé existe, afficher placeholder "********" pour indicateur visuel
+			// Sinon, champ vide
+			$values[ 'api_key_' . $provider_id ] = $has_key ? '********' : '';
 		}
 
 		// Rendre les sections

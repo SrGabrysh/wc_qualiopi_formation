@@ -22,10 +22,13 @@ use WcQualiopiFormation\Form\GravityForms\PageTransitionManager;
 use WcQualiopiFormation\Form\GravityForms\PageTransitionHandler;
 use WcQualiopiFormation\Form\GravityForms\PositioningHelper;
 use WcQualiopiFormation\Form\GravityForms\ResultsInjector;
+use WcQualiopiFormation\Form\GravityForms\YousignIframeHandler;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsGenerator;
 use WcQualiopiFormation\Form\Tracking\TrackingManager;
 use WcQualiopiFormation\Data\Store\PositioningConfigStore;
 use WcQualiopiFormation\Admin\ButtonReplacementManager;
+use WcQualiopiFormation\Helpers\YousignConfigManager;
+use WcQualiopiFormation\Helpers\ApiKeyManager;
 
 /**
  * Classe d'orchestration du module Form
@@ -117,6 +120,13 @@ class FormManager {
 	private $results_injector;
 
 	/**
+	 * Instance YousignIframeHandler
+	 *
+	 * @var YousignIframeHandler
+	 */
+	private $yousign_iframe_handler;
+
+	/**
 	 * Constructeur
 	 */
 	public function __construct() {
@@ -156,6 +166,11 @@ class FormManager {
 		$positioning_helper       = new PositioningHelper( $positioning_config_store );
 		$this->results_injector   = new ResultsInjector( $positioning_helper, $positioning_config_store );
 
+		// Module Yousign - Signature électronique.
+		$yousign_config_manager     = new YousignConfigManager();
+		$api_key_manager            = ApiKeyManager::get_instance();
+		$this->yousign_iframe_handler = new YousignIframeHandler( $yousign_config_manager, $api_key_manager );
+
 		// Module Gravity Forms - Injection, soumission, AJAX.
 		$this->field_injector      = new FieldInjector();
 		$this->submission_handler  = new SubmissionHandler();
@@ -193,6 +208,9 @@ class FormManager {
 		if ( $this->page_transition_handler !== null ) {
 			$this->page_transition_handler->init_hooks();
 		}
+
+		// YousignIframeHandler - init_hooks() appelé explicitement (convention)
+		$this->yousign_iframe_handler->init_hooks();
 
 		$this->results_injector->init_hooks();
 		$this->tracking_manager->init_hooks();

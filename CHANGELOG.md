@@ -7,6 +7,30 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2025-10-15
+
+### Added
+
+- **YousignIframeHandler** : Intégration complète Yousign API v3 pour signature électronique des contrats de formation
+  - Workflow automatique : CREATE → ACTIVATE → Injection iframe dans Gravity Forms
+  - Support des templates Yousign avec placeholders dynamiques (signers + read_only_text_fields)
+  - Injection automatique de l'iframe de signature dans champ HTML Gravity Forms
+  - Gestion des champs pré-remplis dans les PDFs de contrat (nom, prénom, email)
+- Hook `wcqf_page_transition` utilisé pour déclencher automatiquement la création de procédure Yousign
+
+### Fixed
+
+- Correction label placeholder case-sensitive pour compatibilité templates Yousign (`client` au lieu de `Client`)
+- Logs d'idempotence cohérents avec API v3 (utilisation de `sr_id` au lieu de `procedure_id`)
+- Refactorisation endpoints API centralisés via `get_base_api_url()` pour faciliter le switch sandbox/production
+
+### Security
+
+- Validation stricte des données utilisateur extraites de Gravity Forms avant envoi à Yousign
+- Sanitization complète des inputs (nom, prénom, email)
+- Gestion sécurisée des clés API Yousign via ApiKeyManager existant
+- Sessions sécurisées pour stockage temporaire des signature_link
+
 ## [1.2.1] - 2025-10-14
 
 ### Fixed

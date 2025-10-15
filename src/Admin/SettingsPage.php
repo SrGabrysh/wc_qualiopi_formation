@@ -14,6 +14,7 @@ use WcQualiopiFormation\Admin\Settings\GeneralTabRenderer;
 use WcQualiopiFormation\Admin\Settings\MappingTabRenderer;
 use WcQualiopiFormation\Admin\Settings\TrackingTabRenderer;
 use WcQualiopiFormation\Admin\Settings\PositioningTabRenderer;
+use WcQualiopiFormation\Admin\Settings\YousignTabRenderer;
 use WcQualiopiFormation\Admin\Settings\PositioningSettingsSaver;
 use WcQualiopiFormation\Admin\Settings\SettingsSaver;
 use WcQualiopiFormation\Data\Store\PositioningConfigStore;
@@ -71,6 +72,13 @@ class SettingsPage {
 	private $positioning_renderer;
 
 	/**
+	 * Instance du renderer de l'onglet yousign
+	 *
+	 * @var YousignTabRenderer
+	 */
+	private $yousign_renderer;
+
+	/**
 	 * Instance du gestionnaire de sauvegarde
 	 *
 	 * @var SettingsSaver
@@ -96,6 +104,7 @@ class SettingsPage {
 		$this->mapping_renderer = new MappingTabRenderer( $form_manager );
 		$this->tracking_renderer = new TrackingTabRenderer( $form_manager );
 		$this->positioning_renderer = new PositioningTabRenderer( new PositioningConfigStore() );
+		$this->yousign_renderer = new YousignTabRenderer();
 		$this->settings_saver = new SettingsSaver();
 		$this->positioning_saver = new PositioningSettingsSaver();
 	}
@@ -140,14 +149,20 @@ class SettingsPage {
 				   class="nav-tab <?php echo $active_tab === 'tracking' ? 'nav-tab-active' : ''; ?>">
 					<?php \esc_html_e( 'Statistiques', Constants::TEXT_DOMAIN ); ?>
 				</a>
-				<a href="?page=wcqf-settings&tab=positioning" 
-				   class="nav-tab <?php echo $active_tab === 'positioning' ? 'nav-tab-active' : ''; ?>">
-					<?php \esc_html_e( 'Test de positionnement', Constants::TEXT_DOMAIN ); ?>
+			<a href="?page=wcqf-settings&tab=positioning" 
+			   class="nav-tab <?php echo $active_tab === 'positioning' ? 'nav-tab-active' : ''; ?>">
+				<?php \esc_html_e( 'Test de positionnement', Constants::TEXT_DOMAIN ); ?>
+			</a>
+			<?php if ( \class_exists( 'GFAPI' ) ) : ?>
+				<a href="?page=wcqf-settings&tab=yousign" 
+				   class="nav-tab <?php echo $active_tab === 'yousign' ? 'nav-tab-active' : ''; ?>">
+					<?php \esc_html_e( 'Yousign', Constants::TEXT_DOMAIN ); ?>
 				</a>
-				<a href="?page=wcqf-settings&tab=logs" 
-				   class="nav-tab <?php echo $active_tab === 'logs' ? 'nav-tab-active' : ''; ?>">
-					<?php \esc_html_e( 'Logs', Constants::TEXT_DOMAIN ); ?>
-				</a>
+			<?php endif; ?>
+			<a href="?page=wcqf-settings&tab=logs" 
+			   class="nav-tab <?php echo $active_tab === 'logs' ? 'nav-tab-active' : ''; ?>">
+				<?php \esc_html_e( 'Logs', Constants::TEXT_DOMAIN ); ?>
+			</a>
 			</nav>
 
 			<!-- Contenu des onglets -->
@@ -165,6 +180,9 @@ class SettingsPage {
 						break;
 					case 'positioning':
 						$this->render_positioning_tab();
+						break;
+					case 'yousign':
+						$this->render_yousign_tab();
 						break;
 					case 'logs':
 						$this->render_logs_tab();
@@ -255,6 +273,33 @@ class SettingsPage {
 	}
 
 	/**
+	 * Affiche l'onglet Yousign
+	 *
+	 * @return void
+	 */
+	private function render_yousign_tab() {
+		// Vérifier que Gravity Forms est actif
+		if ( ! \class_exists( 'GFAPI' ) ) {
+			LoggingHelper::warning( '[SettingsPage] Tentative accès onglet Yousign sans Gravity Forms' );
+			echo AdminUi::notice(
+				\__( 'Gravity Forms doit être actif pour accéder à cet onglet.', Constants::TEXT_DOMAIN ),
+				'error'
+			);
+			return;
+		}
+
+		?>
+		<form method="post" action="" enctype="multipart/form-data">
+			<?php \wp_nonce_field( 'wcqf_save_settings', 'wcqf_settings_nonce' ); ?>
+			
+			<?php $this->yousign_renderer->render(); ?>
+			
+			<?php echo AdminUi::button_primary( \esc_html__( 'Sauvegarder les configurations', Constants::TEXT_DOMAIN ), 'wcqf_save_settings' ); ?>
+		</form>
+		<?php
+	}
+
+	/**
 	 * Affiche l'onglet Logs
 	 *
 	 * @return void
@@ -271,6 +316,11 @@ class SettingsPage {
 	private function get_active_tab() {
 		$tab = sanitize_text_field( wp_unslash( $_GET['tab'] ?? 'general' ) );
 		$allowed_tabs = array( 'general', 'mapping', 'tracking', 'positioning', 'logs' );
+		
+		// Ajouter l'onglet Yousign uniquement si Gravity Forms est actif
+		if ( \class_exists( 'GFAPI' ) ) {
+			$allowed_tabs[] = 'yousign';
+		}
 		
 		return in_array( $tab, $allowed_tabs, true ) ? $tab : 'general';
 	}

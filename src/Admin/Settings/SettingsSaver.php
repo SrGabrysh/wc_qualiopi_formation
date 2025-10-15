@@ -11,6 +11,7 @@ use WcQualiopiFormation\Core\Constants;
 use WcQualiopiFormation\Helpers\LoggingHelper;
 use WcQualiopiFormation\Helpers\SanitizationHelper;
 use WcQualiopiFormation\Helpers\ApiKeyManager;
+use WcQualiopiFormation\Helpers\YousignConfigManager;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -91,54 +92,72 @@ class SettingsSaver {
 
 		LoggingHelper::debug( '[SettingsSaver] Nonce validé avec succès' );
 
-		// Récupérer et valider les données
-		$raw_settings = $_POST['wcqf_settings'] ?? array();
-		$new_settings = $this->validate_and_sanitize_settings( $raw_settings );
+	// Récupérer et valider les données
+	$raw_settings = $_POST['wcqf_settings'] ?? array();
+	$new_settings = $this->validate_and_sanitize_settings( $raw_settings );
 
-		LoggingHelper::debug( '[SettingsSaver] Settings validés et sanitizés', array(
-			'new_settings_keys' => array_keys( $new_settings ),
-		) );
+	LoggingHelper::debug( '[SettingsSaver] Settings validés et sanitizés', array(
+		'new_settings_keys' => array_keys( $new_settings ),
+	) );
 
-		// [CORRECTION 2025-10-14] Récupérer les settings APRÈS la sauvegarde des clés API
-		// pour éviter d'écraser les clés fraîchement sauvegardées par ApiKeyManager
-		$existing_settings = \get_option( Constants::OPTION_SETTINGS, array() );
-
-		LoggingHelper::debug( '[SettingsSaver] Settings existants récupérés (après clés API)', array(
-			'existing_keys' => array_keys( $existing_settings ),
-			'api_keys_count' => isset( $existing_settings['api_keys'] ) ? count( $existing_settings['api_keys'] ) : 0,
-		) );
-
-		// Fusionner avec les settings existants (préserver ce qui n'est pas dans le formulaire)
-		// IMPORTANT: api_keys a déjà été mis à jour par ApiKeyManager dans validate_and_sanitize_settings()
-		// donc $existing_settings contient déjà les nouvelles clés
-		$settings = array_merge( $existing_settings, $new_settings );
-
-		// Sauvegarder
-		$result = \update_option( Constants::OPTION_SETTINGS, $settings );
-
-		if ( $result || ! empty( $new_settings ) ) {
-			LoggingHelper::info( '[SettingsSaver] Paramètres sauvegardés avec succès', array(
-				'settings_keys' => array_keys( $settings ),
-				'api_keys_count' => isset( $settings['api_keys'] ) ? count( $settings['api_keys'] ) : 0,
-				'form_mappings_count' => count( $settings['form_mappings'] ?? array() ),
-				'update_result' => $result ? 'updated' : 'unchanged',
+	// Vérifier si une action Yousign a déjà ajouté un message de succès
+	$existing_errors = \get_settings_errors( 'wcqf_settings' );
+	$yousign_action_processed = false;
+	foreach ( $existing_errors as $error ) {
+		if ( in_array( $error['code'], array( 'yousign_saved', 'yousign_deleted' ) ) ) {
+			$yousign_action_processed = true;
+			LoggingHelper::info( '[SettingsSaver] Action Yousign déjà traitée, skip sauvegarde settings', array(
+				'action_code' => $error['code'],
 			) );
-			
-			\add_settings_error(
-				'wcqf_settings',
-				'settings_saved',
-				\esc_html__( 'Paramètres sauvegardés avec succès.', Constants::TEXT_DOMAIN ),
-				'success'
-			);
-		} else {
-			LoggingHelper::error( '[SettingsSaver] Échec sauvegarde paramètres' );
-			
-			\add_settings_error(
-				'wcqf_settings',
-				'settings_error',
-				\esc_html__( 'Erreur lors de la sauvegarde des paramètres.', Constants::TEXT_DOMAIN )
-			);
+			break;
 		}
+	}
+
+	// Si une action Yousign a été traitée, ne pas continuer (elle a déjà géré la sauvegarde et les messages)
+	if ( $yousign_action_processed ) {
+		return;
+	}
+
+	// [CORRECTION 2025-10-14] Récupérer les settings APRÈS la sauvegarde des clés API
+	// pour éviter d'écraser les clés fraîchement sauvegardées par ApiKeyManager
+	$existing_settings = \get_option( Constants::OPTION_SETTINGS, array() );
+
+	LoggingHelper::debug( '[SettingsSaver] Settings existants récupérés (après clés API)', array(
+		'existing_keys' => array_keys( $existing_settings ),
+		'api_keys_count' => isset( $existing_settings['api_keys'] ) ? count( $existing_settings['api_keys'] ) : 0,
+	) );
+
+	// Fusionner avec les settings existants (préserver ce qui n'est pas dans le formulaire)
+	// IMPORTANT: api_keys a déjà été mis à jour par ApiKeyManager dans validate_and_sanitize_settings()
+	// donc $existing_settings contient déjà les nouvelles clés
+	$settings = array_merge( $existing_settings, $new_settings );
+
+	// Sauvegarder
+	$result = \update_option( Constants::OPTION_SETTINGS, $settings );
+
+	if ( $result || ! empty( $new_settings ) ) {
+		LoggingHelper::info( '[SettingsSaver] Paramètres sauvegardés avec succès', array(
+			'settings_keys' => array_keys( $settings ),
+			'api_keys_count' => isset( $settings['api_keys'] ) ? count( $settings['api_keys'] ) : 0,
+			'form_mappings_count' => count( $settings['form_mappings'] ?? array() ),
+			'update_result' => $result ? 'updated' : 'unchanged',
+		) );
+		
+		\add_settings_error(
+			'wcqf_settings',
+			'settings_saved',
+			\esc_html__( 'Paramètres sauvegardés avec succès.', Constants::TEXT_DOMAIN ),
+			'success'
+		);
+	} else {
+		LoggingHelper::error( '[SettingsSaver] Échec sauvegarde paramètres' );
+		
+		\add_settings_error(
+			'wcqf_settings',
+			'settings_error',
+			\esc_html__( 'Erreur lors de la sauvegarde des paramètres.', Constants::TEXT_DOMAIN )
+		);
+	}
 	}
 
 	/**
@@ -255,6 +274,9 @@ class SettingsSaver {
 			$settings['form_mappings'] = $this->sanitize_form_mappings( $raw_settings['form_mappings'] );
 		}
 
+		// Configurations Yousign
+		$this->process_yousign_configs( $raw_settings );
+
 		return $settings;
 	}
 
@@ -297,5 +319,221 @@ class SettingsSaver {
 		}
 
 		return $sanitized;
+	}
+
+	/**
+	 * Traite les configurations Yousign (ajout, modification, suppression)
+	 *
+	 * @param array $raw_settings Settings bruts du formulaire.
+	 * @return void
+	 */
+	private function process_yousign_configs( array $raw_settings ) {
+		$yousign_manager = new YousignConfigManager();
+
+		LoggingHelper::debug( '[SettingsSaver] Traitement configs Yousign', array(
+			'has_delete_btn' => isset( $_POST['wcqf_delete_yousign_config'] ),
+			'has_add_btn' => isset( $_POST['wcqf_add_yousign_config'] ),
+			'has_yousign_new' => isset( $raw_settings['yousign_new'] ),
+			'has_yousign_configs' => isset( $raw_settings['yousign_configs'] ),
+		) );
+
+		// Traiter la suppression d'une configuration
+		if ( isset( $_POST['wcqf_delete_yousign_config'] ) ) {
+			$form_id = \absint( $_POST['wcqf_delete_yousign_config'] );
+			$result = $yousign_manager->delete_config( $form_id );
+
+			if ( $result ) {
+				\add_settings_error(
+					'wcqf_settings',
+					'yousign_deleted',
+					\__( 'Configuration Yousign supprimée avec succès.', Constants::TEXT_DOMAIN ),
+					'success'
+				);
+			}
+			return;
+		}
+
+		// Traiter l'ajout d'une nouvelle configuration
+		// Déclencher si yousign_new contient des données (peu importe le bouton)
+		if ( ! empty( $raw_settings['yousign_new'] ) ) {
+			LoggingHelper::debug( '[SettingsSaver] Branche ajout Yousign déclenchée', array(
+				'yousign_new_data' => $raw_settings['yousign_new'],
+			) );
+			$this->add_yousign_config( $raw_settings['yousign_new'], $yousign_manager );
+			return;
+		}
+
+		// Traiter les modifications de configurations existantes
+		if ( isset( $raw_settings['yousign_configs'] ) && \is_array( $raw_settings['yousign_configs'] ) ) {
+			LoggingHelper::debug( '[SettingsSaver] Branche mise à jour Yousign déclenchée', array(
+				'configs_count' => count( $raw_settings['yousign_configs'] ),
+			) );
+			$this->update_yousign_configs( $raw_settings['yousign_configs'], $yousign_manager );
+		} else {
+			LoggingHelper::debug( '[SettingsSaver] Aucune action Yousign déclenchée', array(
+				'has_yousign_new' => isset( $raw_settings['yousign_new'] ),
+				'has_yousign_configs' => isset( $raw_settings['yousign_configs'] ),
+			) );
+		}
+	}
+
+	/**
+	 * Ajoute une nouvelle configuration Yousign
+	 *
+	 * @param array                $new_config Données de la nouvelle config.
+	 * @param YousignConfigManager $manager Instance du manager.
+	 * @return void
+	 */
+	private function add_yousign_config( array $new_config, YousignConfigManager $manager ) {
+		// LOG: Voir les données AVANT sanitization
+		LoggingHelper::debug( '[SettingsSaver] AVANT sanitization', array(
+			'new_config_keys' => array_keys( $new_config ),
+			'new_config_values' => $new_config,
+		) );
+
+		// Sanitizer les données
+		$sanitized = $manager->sanitize_config_data( $new_config );
+
+		// LOG: Voir les données APRÈS sanitization
+		LoggingHelper::debug( '[SettingsSaver] APRÈS sanitization', array(
+			'sanitized_keys' => array_keys( $sanitized ),
+			'sanitized_values' => $sanitized,
+			'form_id_empty' => empty( $sanitized['form_id'] ),
+			'template_id_empty' => empty( $sanitized['template_id'] ),
+		) );
+
+		// Vérifier que les champs requis sont présents
+		if ( empty( $sanitized['form_id'] ) || empty( $sanitized['template_id'] ) ) {
+			\add_settings_error(
+				'wcqf_settings',
+				'yousign_missing_fields',
+				\__( 'Formulaire et Template ID sont requis.', Constants::TEXT_DOMAIN ),
+				'error'
+			);
+			return;
+		}
+
+		// Traiter l'upload du fichier JSON
+		$mapping = $this->handle_json_upload();
+		if ( is_wp_error( $mapping ) ) {
+			\add_settings_error(
+				'wcqf_settings',
+				'yousign_json_error',
+				$mapping->get_error_message(),
+				'error'
+			);
+			return;
+		}
+
+		// Sauvegarder la configuration
+		$result = $manager->save_config(
+			$sanitized['form_id'],
+			$sanitized['template_id'],
+			$mapping
+		);
+
+		if ( is_wp_error( $result ) ) {
+			\add_settings_error(
+				'wcqf_settings',
+				'yousign_save_error',
+				$result->get_error_message(),
+				'error'
+			);
+		} else {
+			\add_settings_error(
+				'wcqf_settings',
+				'yousign_saved',
+				\__( 'Configuration Yousign ajoutée avec succès.', Constants::TEXT_DOMAIN ),
+				'success'
+			);
+		}
+	}
+
+	/**
+	 * Met à jour les configurations Yousign existantes
+	 *
+	 * @param array                $configs Configurations à mettre à jour.
+	 * @param YousignConfigManager $manager Instance du manager.
+	 * @return void
+	 */
+	private function update_yousign_configs( array $configs, YousignConfigManager $manager ) {
+		$updated_count = 0;
+
+		foreach ( $configs as $form_id => $config ) {
+			$sanitized = $manager->sanitize_config_data( $config );
+
+			if ( empty( $sanitized['form_id'] ) || empty( $sanitized['template_id'] ) ) {
+				continue;
+			}
+
+			// Conserver le mapping existant si non modifié
+			$existing_config = $manager->get_config( (int) $form_id );
+			$mapping = $existing_config['mapping'] ?? array();
+
+			// Sauvegarder la configuration mise à jour
+			$result = $manager->save_config(
+				$sanitized['form_id'],
+				$sanitized['template_id'],
+				$mapping
+			);
+
+			if ( ! is_wp_error( $result ) ) {
+				$updated_count++;
+			}
+		}
+
+		if ( $updated_count > 0 ) {
+			LoggingHelper::info( '[SettingsSaver] Configs Yousign mises à jour', array(
+				'updated_count' => $updated_count,
+			) );
+		}
+	}
+
+	/**
+	 * Gère l'upload du fichier JSON mapping
+	 *
+	 * @return array|\WP_Error Array mapping si succès (ou vide si pas de fichier), WP_Error si erreur.
+	 */
+	private function handle_json_upload() {
+		// Si aucun fichier uploadé, retourner un tableau vide (mapping optionnel)
+		if ( empty( $_FILES['yousign_mapping_file']['name'] ) ) {
+			LoggingHelper::debug( '[SettingsSaver] Aucun fichier JSON uploadé - mapping vide' );
+			return array(); // Mapping optionnel
+		}
+
+		$file = $_FILES['yousign_mapping_file'];
+
+		// Vérifier la taille du fichier (max 1MB)
+		if ( $file['size'] > 1048576 ) {
+			LoggingHelper::warning( '[SettingsSaver] Fichier JSON trop volumineux', array(
+				'size' => $file['size'],
+				'max_size' => 1048576,
+			) );
+			return new \WP_Error( 'YCFG_005', \__( 'Fichier trop volumineux (max 1MB).', Constants::TEXT_DOMAIN ) );
+		}
+
+		// Vérifier l'extension
+		$file_ext = \pathinfo( $file['name'], PATHINFO_EXTENSION );
+		if ( \strtolower( $file_ext ) !== 'json' ) {
+			return new \WP_Error( 'YCFG_001', \__( 'Le fichier doit être au format JSON.', Constants::TEXT_DOMAIN ) );
+		}
+
+		// Lire le contenu du fichier
+		$json_content = \file_get_contents( $file['tmp_name'] );
+
+		// Valider le JSON
+		$yousign_manager = new YousignConfigManager();
+		$mapping = $yousign_manager->validate_json_mapping( $json_content );
+
+		if ( is_wp_error( $mapping ) ) {
+			return $mapping;
+		}
+
+		LoggingHelper::info( '[SettingsSaver] JSON mapping validé', array(
+			'file_name' => $file['name'],
+			'fields_count' => count( $mapping ),
+		) );
+
+		return $mapping;
 	}
 }

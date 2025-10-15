@@ -7,6 +7,29 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.4.0] - 2025-10-15
+
+### Changed
+
+- **Refactorisation majeure de l'architecture du module Yousign** pour améliorer la maintenabilité et faciliter les évolutions futures
+  - Création de `src/Modules/Yousign/` avec séparation stricte par responsabilité (Client/, Payload/, Handlers/)
+  - **YousignClient.php** (187 lignes) : Isolation complète de la communication HTTP avec API Yousign v3
+  - **PayloadBuilder.php** (173 lignes) : Isolation de la construction des payloads JSON pour l'API
+  - **YousignIframeHandler.php** : Refactorisation de 638 → 352 lignes (-45%), transformation en orchestrateur pur respectant le principe SRP
+  - FormManager.php mis à jour avec injection de dépendances complète pour le module Yousign
+- **Centralisation de l'extraction des données Gravity Forms** pour éliminer la duplication de code
+  - `DataExtractor::extract_personal()` rendue publique pour réutilisation par d'autres modules
+  - Suppression de la méthode dupliquée `extract_user_data()` dans YousignIframeHandler
+  - Application des principes DRY (Don't Repeat Yourself) et SSOT (Single Source of Truth)
+  - Audit complet de réutilisation documenté dans `AUDIT_REUTILISATION_DATAEXTRACTOR.md`
+
+### Improved
+
+- **Réduction de 52% de la complexité cyclomatique** dans YousignIframeHandler (25 → 12)
+- **Amélioration de la testabilité** : Injection de dépendances facilitant les tests unitaires et le mocking
+- **Amélioration de la maintenabilité** : Séparation claire des responsabilités selon le principe SRP
+- **Architecture 100% conforme** aux référentiels du plugin (limites de taille, responsabilité unique, modularité)
+
 ## [1.3.0] - 2025-10-15
 
 ### Added

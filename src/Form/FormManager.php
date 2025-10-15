@@ -22,9 +22,12 @@ use WcQualiopiFormation\Form\GravityForms\PageTransitionManager;
 use WcQualiopiFormation\Form\GravityForms\PageTransitionHandler;
 use WcQualiopiFormation\Form\GravityForms\PositioningHelper;
 use WcQualiopiFormation\Form\GravityForms\ResultsInjector;
-use WcQualiopiFormation\Form\GravityForms\YousignIframeHandler;
+use WcQualiopiFormation\Modules\Yousign\Handlers\YousignIframeHandler;
+use WcQualiopiFormation\Modules\Yousign\Client\YousignClient;
+use WcQualiopiFormation\Modules\Yousign\Payload\PayloadBuilder;
 use WcQualiopiFormation\Form\MentionsLegales\MentionsGenerator;
 use WcQualiopiFormation\Form\Tracking\TrackingManager;
+use WcQualiopiFormation\Form\Tracking\DataExtractor;
 use WcQualiopiFormation\Data\Store\PositioningConfigStore;
 use WcQualiopiFormation\Admin\ButtonReplacementManager;
 use WcQualiopiFormation\Helpers\YousignConfigManager;
@@ -167,9 +170,18 @@ class FormManager {
 		$this->results_injector   = new ResultsInjector( $positioning_helper, $positioning_config_store );
 
 		// Module Yousign - Signature électronique.
-		$yousign_config_manager     = new YousignConfigManager();
-		$api_key_manager            = ApiKeyManager::get_instance();
-		$this->yousign_iframe_handler = new YousignIframeHandler( $yousign_config_manager, $api_key_manager );
+		$yousign_config_manager = new YousignConfigManager();
+		$api_key_manager        = ApiKeyManager::get_instance();
+		$yousign_client         = new YousignClient( $api_key_manager );
+		$payload_builder        = new PayloadBuilder();
+		$data_extractor         = new DataExtractor();
+		
+		$this->yousign_iframe_handler = new YousignIframeHandler(
+			$yousign_config_manager,
+			$yousign_client,
+			$payload_builder,
+			$data_extractor
+		);
 
 		// Module Gravity Forms - Injection, soumission, AJAX.
 		$this->field_injector      = new FieldInjector();

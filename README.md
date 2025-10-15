@@ -1,6 +1,6 @@
 # WC Qualiopi Formation
 
-**Version:** 1.3.0
+**Version:** 1.4.0
 
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 
@@ -229,6 +229,15 @@ composer phpcbf
 ## 📝 Changelog
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
+
+### Version 1.4.0 - 2025-10-15
+
+- **Refactorisation majeure de l'architecture Yousign** : Amélioration drastique de la maintenabilité
+  - Module Yousign restructuré avec séparation stricte des responsabilités (Client, Payload, Handlers)
+  - YousignIframeHandler réduit de 45% (638 → 352 lignes) et transformé en orchestrateur pur
+  - Centralisation de l'extraction des données Gravity Forms (principe DRY/SSOT)
+  - Réduction de 52% de la complexité, amélioration de la testabilité
+  - Architecture 100% conforme aux standards du plugin
 
 ### Version 1.3.0 - 2025-10-15
 

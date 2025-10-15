@@ -67,7 +67,7 @@ class DataExtractor {
 	 * @param array $form Formulaire GF.
 	 * @return array Données personnelles.
 	 */
-	private function extract_personal( $entry, $form ) {
+	public function extract_personal( $entry, $form ) {
 		$mapping      = $this->field_mapper->get_field_mapping( $form['id'] );
 		$representant = $this->field_mapper->get_representant_data( $form['id'], $entry );
 

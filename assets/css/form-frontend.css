@@ -165,3 +165,46 @@
     max-height: 20px !important;
   }
 }
+
+/* ============================================================================
+   Yousign Iframe Styles - Signature électronique
+   Correction bug affichage - ID direct pour spécificité maximale
+   ============================================================================ */
+
+/* Cible directement le champ via son ID (spécificité maximale) */
+#gform_wrapper_1 #field_1_34,
+#gform_wrapper_1 .gfield#field_1_34,
+.gform_wrapper #gform_fields_1_4 .gfield#field_1_34 {
+  height: 90vh !important;
+  min-height: 750px !important;
+  max-height: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  overflow: visible !important;
+}
+
+/* Force tous les enfants à prendre 100% de la hauteur */
+#field_1_34 > *,
+#field_1_34 #yousign_iframe {
+  height: 100% !important;
+  min-height: 100% !important;
+  width: 100% !important;
+}
+
+/* L'iframe générée par le SDK Yousign */
+#field_1_34 #yousign_iframe iframe,
+#field_1_34 iframe#yousign-iframe {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  display: block !important;
+}
+
+/* Supprime les contraintes de Gravity Forms */
+.gform_wrapper .gform_page_fields #field_1_34 {
+  max-width: none !important;
+  width: 100% !important;
+}

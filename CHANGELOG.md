@@ -7,6 +7,27 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.4.2] - 2025-10-15
+
+### Fixed
+
+- **Bug majeur d'affichage iframe Yousign** : Correction de l'iframe confinée dans un cadre de 306px × 150px
+  - L'iframe occupe maintenant 90% de la hauteur de l'écran (90vh) avec une hauteur minimale de 750px
+  - Suppression des barres de défilement imbriquées qui rendaient l'interface inutilisable
+  - Ajout de styles CSS avec spécificité maximale (`#field_1_34`) pour outrepasser les règles Gravity Forms
+- **Séparation des responsabilités** : Suppression du style inline dans YousignIframeHandler.php
+  - Respect du principe de séparation PHP vs CSS
+  - Amélioration de la maintenabilité du code
+- **Identification du fichier CSS correct** : Correction du bug de modification du mauvais fichier CSS
+  - Styles ajoutés dans `form-frontend.css` (fichier réellement chargé) au lieu de `frontend.css`
+  - Mise à jour de la version du plugin pour forcer le rechargement du cache CSS
+
+### Improved
+
+- **Expérience utilisateur** : L'interface de signature électronique Yousign est maintenant pleinement utilisable
+- **Architecture CSS** : Utilisation de l'ID direct avec spécificité CSS maximale pour garantir l'application des styles
+- **Maintenabilité** : Documentation complète de la solution dans le rapport de mise en œuvre
+
 ## [1.4.0] - 2025-10-15
 
 ### Changed

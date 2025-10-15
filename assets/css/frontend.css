@@ -218,42 +218,53 @@
 
 /* ============================================================================
    Yousign Iframe Styles - Signature électronique
+   CORRECTION : Utilisation de l'ID direct pour spécificité maximale
    ============================================================================ */
 
 /**
  * Correction pour l'affichage plein écran de l'iframe Yousign
  * dans le champ HTML de Gravity Forms (ID 34).
  * 
- * Problème résolu : Les conteneurs Gravity Forms (.gfield, .ginput_container)
- * appliquent une hauteur automatique restrictive qui confine l'iframe dans 
- * un cadre minuscule (~306px × 150px) avec barres de défilement.
+ * Problème résolu : Les conteneurs Gravity Forms appliquent des règles
+ * CSS très spécifiques qui écrasent les styles normaux.
  * 
- * Solution : Utilisation du sélecteur :has() pour cibler le conteneur parent
- * uniquement s'il contient l'iframe Yousign, et forcer une hauteur importante
- * pour une expérience utilisateur optimale.
+ * Solution : Utiliser l'ID direct #field_1_34 avec !important
  */
 
-/* Cible le conteneur du champ (l'élément <li>) qui contient notre iframe */
-.gfield:has(#yousign_iframe) {
-  /* Force la hauteur à prendre une grande partie de l'écran */
+/* Cible directement le champ via son ID (spécificité maximale) */
+#gform_wrapper_1 #field_1_34,
+#gform_wrapper_1 .gfield#field_1_34,
+.gform_wrapper #gform_fields_1_4 .gfield#field_1_34 {
   height: 90vh !important;
-  min-height: 750px !important; /* Hauteur minimale pour grands écrans */
+  min-height: 750px !important;
+  max-height: none !important;
   padding: 0 !important;
+  margin: 0 !important;
   border: none !important;
-  max-width: none !important;
+  overflow: visible !important;
 }
 
-/* Cible les conteneurs internes de Gravity Forms pour qu'ils s'étendent */
-.gfield:has(#yousign_iframe) .ginput_container,
-.gfield:has(#yousign_iframe) .ginput_container_html {
+/* Force tous les enfants à prendre 100% de la hauteur */
+#field_1_34 > *,
+#field_1_34 #yousign_iframe {
   height: 100% !important;
+  min-height: 100% !important;
+  width: 100% !important;
 }
 
-/* Notre div conteneur et l'iframe générée par le SDK Yousign remplissent l'espace */
-#yousign_iframe,
-#yousign_iframe iframe {
+/* L'iframe générée par le SDK Yousign */
+#field_1_34 #yousign_iframe iframe,
+#field_1_34 iframe#yousign-iframe {
   width: 100% !important;
-  height: 100% !important; /* Force la hauteur à 100% du conteneur */
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  height: 100% !important;
+  min-height: 100% !important;
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 8px !important;
+  display: block !important;
+}
+
+/* Supprime les contraintes de Gravity Forms */
+.gform_wrapper .gform_page_fields #field_1_34 {
+  max-width: none !important;
+  width: 100% !important;
 }

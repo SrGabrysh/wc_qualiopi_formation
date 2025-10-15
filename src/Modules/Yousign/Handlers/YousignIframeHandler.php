@@ -316,7 +316,7 @@ class YousignIframeHandler {
 		$signature_link_json = wp_json_encode( $signature_link, JSON_HEX_TAG | JSON_HEX_AMP );
 
 		return sprintf(
-			'<div id="yousign_iframe" style="width:100%%;height:720px"></div>
+			'<div id="yousign_iframe"></div>
 			<script src="https://cdn.yousign.tech/iframe-sdk-1.6.0.min.js" integrity="sha384-/7MD1voOOzWVz7FmgeMwmmd1DO85Mo0PkkxdYd9j2wDGzGDGRG/phgnL0c9Xyy52" crossorigin="anonymous"></script>
 			<script>
 			  (function(){

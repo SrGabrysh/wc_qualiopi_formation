@@ -215,3 +215,45 @@
     max-height: 28px !important;
   }
 }
+
+/* ============================================================================
+   Yousign Iframe Styles - Signature électronique
+   ============================================================================ */
+
+/**
+ * Correction pour l'affichage plein écran de l'iframe Yousign
+ * dans le champ HTML de Gravity Forms (ID 34).
+ * 
+ * Problème résolu : Les conteneurs Gravity Forms (.gfield, .ginput_container)
+ * appliquent une hauteur automatique restrictive qui confine l'iframe dans 
+ * un cadre minuscule (~306px × 150px) avec barres de défilement.
+ * 
+ * Solution : Utilisation du sélecteur :has() pour cibler le conteneur parent
+ * uniquement s'il contient l'iframe Yousign, et forcer une hauteur importante
+ * pour une expérience utilisateur optimale.
+ */
+
+/* Cible le conteneur du champ (l'élément <li>) qui contient notre iframe */
+.gfield:has(#yousign_iframe) {
+  /* Force la hauteur à prendre une grande partie de l'écran */
+  height: 90vh !important;
+  min-height: 750px !important; /* Hauteur minimale pour grands écrans */
+  padding: 0 !important;
+  border: none !important;
+  max-width: none !important;
+}
+
+/* Cible les conteneurs internes de Gravity Forms pour qu'ils s'étendent */
+.gfield:has(#yousign_iframe) .ginput_container,
+.gfield:has(#yousign_iframe) .ginput_container_html {
+  height: 100% !important;
+}
+
+/* Notre div conteneur et l'iframe générée par le SDK Yousign remplissent l'espace */
+#yousign_iframe,
+#yousign_iframe iframe {
+  width: 100% !important;
+  height: 100% !important; /* Force la hauteur à 100% du conteneur */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}

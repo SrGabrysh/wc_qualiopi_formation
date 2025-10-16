@@ -29,6 +29,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 final class Activator {
 
 	/**
+	 * Current database version
+	 */
+	const DB_VERSION = '1.1.0';
+
+	/**
+	 * Database version option name
+	 */
+	const DB_VERSION_OPTION = 'wcqf_db_version';
+
+	/**
 	 * Activate plugin
 	 * 
 	 * Called when plugin is activated
@@ -44,8 +54,8 @@ final class Activator {
 			);
 		}
 
-		// Create database tables
-		self::create_tables();
+		// Create or update database tables
+		self::create_or_update_tables();
 
 		// Set default options
 		self::set_default_options();
@@ -60,15 +70,17 @@ final class Activator {
 	}
 
 	/**
-	 * Create plugin database tables
+	 * Create or update plugin database tables
 	 * 
-	 * Uses WordPress dbDelta for reliable table creation
+	 * Uses WordPress dbDelta for reliable table creation/updates
+	 * Handles migrations between versions
 	 * Principle: Declarative over Imperative
 	 */
-	private static function create_tables(): void {
+	private static function create_or_update_tables(): void {
 		global $wpdb;
 
 		$charset_collate = $wpdb->get_charset_collate();
+		$current_db_version = get_option( self::DB_VERSION_OPTION, '0.0.0' );
 
 		// Table 1: Progress tracking (main table)
 		$table_progress = Constants::get_table_name( Constants::TABLE_PROGRESS );
@@ -137,8 +149,11 @@ final class Activator {
 		dbDelta( $sql_tracking );
 		dbDelta( $sql_audit );
 
-		// Store database version for future migrations
-		update_option( 'wcqf_db_version', '1.0.0' );
+		// Run migrations if needed
+		self::run_migrations( $current_db_version );
+
+		// Store current database version
+		update_option( self::DB_VERSION_OPTION, self::DB_VERSION );
 	}
 
 	/**
@@ -220,6 +235,53 @@ final class Activator {
 	}
 
 	/**
+	 * Run database migrations based on version
+	 * 
+	 * @param string $from_version Current DB version
+	 */
+	private static function run_migrations( string $from_version ): void {
+		global $wpdb;
+
+		// Migration 1.0.0 -> 1.1.0: Add convention_id column
+		if ( version_compare( $from_version, '1.1.0', '<' ) ) {
+			$table_progress = Constants::get_table_name( Constants::TABLE_PROGRESS );
+			
+			// Check if column already exists (idempotence)
+			$column_exists = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS 
+					WHERE TABLE_SCHEMA = %s 
+					AND TABLE_NAME = %s 
+					AND COLUMN_NAME = 'convention_id'",
+					DB_NAME,
+					$table_progress
+				)
+			);
+
+			if ( empty( $column_exists ) ) {
+				// Add convention_id column after token
+				$wpdb->query(
+					"ALTER TABLE {$table_progress} 
+					ADD COLUMN convention_id VARCHAR(255) NULL AFTER token,
+					ADD INDEX idx_convention_id (convention_id)"
+				);
+
+				// Log migration success
+				LoggingHelper::info(
+					'[Activator] Migration 1.1.0 completed: convention_id column added',
+					array(
+						'table'        => $table_progress,
+						'from_version' => $from_version,
+						'to_version'   => self::DB_VERSION,
+					)
+				);
+			}
+		}
+
+		// Future migrations can be added here with similar version checks
+	}
+
+	/**
 	 * Verify requirements are met
 	 * 
 	 * @return bool True if all requirements met
@@ -248,6 +310,7 @@ final class Activator {
 
 		return true;
 	}
+
 }
 
 

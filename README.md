@@ -1,6 +1,6 @@
 # WC Qualiopi Formation
 
-**Version:** 1.4.2
+**Version:** 1.4.3
 
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 

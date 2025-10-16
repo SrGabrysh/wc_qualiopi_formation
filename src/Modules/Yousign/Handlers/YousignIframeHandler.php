@@ -19,12 +19,14 @@ use WcQualiopiFormation\Security\SessionManager;
 use WcQualiopiFormation\Modules\Yousign\Client\YousignClient;
 use WcQualiopiFormation\Modules\Yousign\Payload\PayloadBuilder;
 use WcQualiopiFormation\Form\Tracking\DataExtractor;
+use WcQualiopiFormation\Data\ProgressTracker;
 
 /**
  * Class YousignIframeHandler
  *
  * Orchestre l'intégration Yousign pour signature électronique dans Gravity Forms :
  * - Écoute la transition page 3→4 (hook wcqf_page_transition)
+ * - Génère un convention_id unique basé sur la session WooCommerce
  * - Crée une procédure de signature via YousignClient
  * - Stocke les IDs de procédure en session (TTL 1h)
  * - Injecte l'iframe de signature dans le champ HTML ID 34
@@ -209,8 +211,30 @@ class YousignIframeHandler {
 			'has_email'      => ! empty( $user_data['email'] ),
 		) );
 
-		// Construire le payload via PayloadBuilder
-		$payload = $this->payload_builder->build_signature_request_payload( $user_data, $config );
+
+		// NOUVEAU : Générer le convention_id AVANT de construire le payload
+		$token = $transition_data['token'] ?? '';
+		$convention_id = '';
+
+		// Valider que le token existe avant de générer le convention_id
+		if ( ! empty( $token ) ) {
+			$convention_id = $this->generate_and_store_convention_id( $token );
+			
+			if ( ! $convention_id ) {
+				LoggingHelper::warning( '[YousignIframe] Could not generate convention_id, continuing without it', array(
+					'token_preview' => substr( $token, 0, 10 ),
+				) );
+				// Non-bloquant : on continue sans convention_id (forcer string vide)
+				$convention_id = '';
+			}
+		} else {
+			LoggingHelper::warning( '[YousignIframe] No token provided, skipping convention_id generation', array(
+				'transition_data_keys' => array_keys( $transition_data ),
+			) );
+		}
+
+		// Construire le payload via PayloadBuilder (avec convention_id)
+		$payload = $this->payload_builder->build_signature_request_payload( $user_data, $config, $convention_id );
 		if ( empty( $payload ) ) {
 			LoggingHelper::error( '[YousignIframe] Payload build failed', array(
 				'form_id' => $transition_data['form_id'],
@@ -348,6 +372,104 @@ class YousignIframeHandler {
 	 */
 	private function get_session_key( $form_id ) {
 		return 'yousign_procedure_' . $form_id;
+	}
+
+	/**
+	 * Génère et stocke le convention_id basé sur la session WooCommerce
+	 * 
+	 * Format : {session_id}_{product_id}_{unix_timestamp}
+	 * Fallback utilisateurs connectés : user_{user_id}_{product_id}_{unix_timestamp}
+	 * 
+	 * @param string $token Token HMAC du parcours (pour récupérer les données de progression)
+	 * @return string|null Convention ID généré ou null si erreur
+	 */
+	private function generate_and_store_convention_id( string $token ): ?string {
+		LoggingHelper::debug( '[YousignIframe] Starting convention_id generation', array(
+			'token_preview' => substr( $token, 0, 10 ),
+			'token_length'  => strlen( $token ),
+		) );
+
+		// 1. Récupérer les données de progression via le token HMAC
+		$progress = ProgressTracker::get_progress( $token );
+		if ( ! $progress ) {
+			LoggingHelper::error( '[YousignIframe] Progress not found for convention_id generation', array(
+				'token_preview' => substr( $token, 0, 10 ),
+				'token_full'    => $token, // Log complet pour debug
+			) );
+			return null;
+		}
+
+		LoggingHelper::debug( '[YousignIframe] Progress data retrieved', array(
+			'has_session_id' => ! empty( $progress['session_id'] ),
+			'has_product_id' => ! empty( $progress['product_id'] ),
+			'has_user_id'    => ! empty( $progress['user_id'] ),
+			'progress_keys'  => array_keys( $progress ),
+		) );
+
+		// 2. Récupérer session_id (déjà stocké en BDD par ProgressStorage::start)
+		$session_id = $progress['session_id'] ?? '';
+		$product_id = $progress['product_id'] ?? 0;
+		$user_id    = $progress['user_id'] ?? 0;
+
+		// 3. Validation du product_id
+		if ( empty( $product_id ) ) {
+			LoggingHelper::error( '[YousignIframe] Missing product_id for convention_id', array(
+				'token_preview' => substr( $token, 0, 10 ),
+			) );
+			return null;
+		}
+
+		// 4. Fallback pour utilisateurs connectés (session_id peut être vide)
+		if ( empty( $session_id ) ) {
+			if ( ! empty( $user_id ) ) {
+				$session_id = 'user_' . $user_id;
+				LoggingHelper::debug( '[YousignIframe] Using user_id fallback for convention_id', array(
+					'user_id'     => $user_id,
+					'fallback_id' => $session_id,
+				) );
+			} else {
+				LoggingHelper::error( '[YousignIframe] No session_id or user_id available', array(
+					'token_preview' => substr( $token, 0, 10 ),
+				) );
+				return null;
+			}
+		}
+
+		// 5. Générer le convention_id
+		$timestamp     = time();
+		$convention_id = sprintf( '%s_%d_%d', $session_id, $product_id, $timestamp );
+
+		// 6. Stocker dans la colonne dédiée de wp_wcqf_progress
+		global $wpdb;
+		$table_name = Constants::get_table_name( Constants::TABLE_PROGRESS );
+
+		$result = $wpdb->update(
+			$table_name,
+			array( 'convention_id' => $convention_id ),
+			array( 'token' => $token ),
+			array( '%s' ),
+			array( '%s' )
+		);
+
+		if ( false === $result ) {
+			LoggingHelper::error( '[YousignIframe] Failed to store convention_id in database', array(
+				'token_preview' => substr( $token, 0, 10 ),
+				'convention_id' => $convention_id,
+				'wpdb_error'    => $wpdb->last_error,
+			) );
+			return null;
+		}
+
+		// 7. Log de succès
+		LoggingHelper::info( '[YousignIframe] Convention ID generated and stored', array(
+			'convention_id' => $convention_id,
+			'token_preview' => substr( $token, 0, 10 ),
+			'product_id'    => $product_id,
+			'session_id'    => substr( $session_id, 0, 15 ) . '...',
+			'timestamp'     => $timestamp,
+		) );
+
+		return $convention_id;
 	}
 }
 

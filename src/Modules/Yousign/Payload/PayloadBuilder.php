@@ -28,11 +28,12 @@ class PayloadBuilder {
 	 *
 	 * API v3 : utilise template_id + template_placeholders, pas de members/documents
 	 *
-	 * @param array $user_data Données utilisateur validées (firstName, lastName, email).
-	 * @param array $config Configuration Yousign (template_id, custom_experience_id, etc.).
+	 * @param array  $user_data     Données utilisateur validées (firstName, lastName, email).
+	 * @param array  $config        Configuration Yousign (template_id, custom_experience_id, etc.).
+	 * @param string $convention_id Identifiant unique de la convention (optionnel).
 	 * @return array Payload JSON prêt pour l'API.
 	 */
-	public function build_signature_request_payload( array $user_data, array $config ) {
+	public function build_signature_request_payload( array $user_data, array $config, string $convention_id = '' ) {
 		// Validation des données requises
 		if ( ! $this->validate_user_data( $user_data ) ) {
 			LoggingHelper::error( '[PayloadBuilder] Invalid user data', array(
@@ -63,13 +64,15 @@ class PayloadBuilder {
 		// Mode Template : template_id + placeholders pour les signataires
 		if ( ! empty( $config['template_id'] ) ) {
 			$payload['template_id'] = $config['template_id'];
-			$payload['template_placeholders'] = $this->build_template_placeholders( $user_data, $config );
+			$payload['template_placeholders'] = $this->build_template_placeholders( $user_data, $config, $convention_id );
 		}
 
 		LoggingHelper::debug( '[PayloadBuilder] Payload built', array(
-			'has_template_id' => ! empty( $payload['template_id'] ),
-			'has_custom_exp'  => ! empty( $payload['custom_experience_id'] ),
-			'signers_count'   => isset( $payload['template_placeholders']['signers'] ) ? count( $payload['template_placeholders']['signers'] ) : 0,
+			'has_template_id'   => ! empty( $payload['template_id'] ),
+			'has_custom_exp'    => ! empty( $payload['custom_experience_id'] ),
+			'has_convention_id' => ! empty( $convention_id ),
+			'signers_count'     => isset( $payload['template_placeholders']['signers'] ) ? count( $payload['template_placeholders']['signers'] ) : 0,
+			'read_only_count'   => isset( $payload['template_placeholders']['read_only_text_fields'] ) ? count( $payload['template_placeholders']['read_only_text_fields'] ) : 0,
 		) );
 
 		return $payload;
@@ -78,14 +81,15 @@ class PayloadBuilder {
 	/**
 	 * Construit les template_placeholders pour l'API Yousign v3
 	 *
-	 * @param array $user_data Données utilisateur.
-	 * @param array $config Configuration Yousign.
+	 * @param array  $user_data     Données utilisateur.
+	 * @param array  $config        Configuration Yousign.
+	 * @param string $convention_id Identifiant de convention (optionnel).
 	 * @return array Template placeholders.
 	 */
-	private function build_template_placeholders( array $user_data, array $config ) {
+	private function build_template_placeholders( array $user_data, array $config, string $convention_id = '' ): array {
 		$placeholders = array(
 			'signers'               => $this->build_signers_placeholders( $user_data, $config ),
-			'read_only_text_fields' => $this->build_readonly_fields( $user_data ),
+			'read_only_text_fields' => $this->build_readonly_fields( $user_data, $convention_id ),
 		);
 
 		return $placeholders;
@@ -122,15 +126,30 @@ class PayloadBuilder {
 	 * Ces champs permettent d'afficher les données utilisateur dans le document PDF
 	 * sans être des zones de signature.
 	 *
-	 * @param array $user_data Données utilisateur.
+	 * @param array  $user_data     Données utilisateur.
+	 * @param string $convention_id Identifiant de convention (optionnel).
 	 * @return array Read-only text fields.
 	 */
-	private function build_readonly_fields( array $user_data ) {
-		return array(
-			array( 'label' => 'first_name', 'text' => $user_data['firstName'] ),
-			array( 'label' => 'last_name',  'text' => $user_data['lastName'] ),
-			array( 'label' => 'email',      'text' => $user_data['email'] ),
+	private function build_readonly_fields( array $user_data, string $convention_id = '' ): array {
+		$fields = array(
+			array( 'label' => 'first_name', 'text' => $user_data['firstName'] ?? '' ),
+			array( 'label' => 'last_name',  'text' => $user_data['lastName'] ?? '' ),
+			array( 'label' => 'email',      'text' => $user_data['email'] ?? '' ),
 		);
+
+		// NOUVEAU : Ajouter le convention_id aux champs read-only si présent
+		if ( ! empty( $convention_id ) ) {
+			$fields[] = array(
+				'label' => 'convention_id',
+				'text'  => $convention_id,
+			);
+
+			LoggingHelper::debug( '[PayloadBuilder] Convention ID injected into read_only_text_fields', array(
+				'convention_id' => $convention_id,
+			) );
+		}
+
+		return $fields;
 	}
 
 	/**

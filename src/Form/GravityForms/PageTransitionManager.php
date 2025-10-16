@@ -131,6 +131,8 @@ class PageTransitionManager {
 				'payload_keys' => array_keys( $transition_data ),
 				'data_size'    => count( $submission_data ),
 				'has_token'    => ! empty( $transition_data['token'] ),
+				'token_value'  => $transition_data['token'],
+				'field_9999'   => $submission_data['9999'] ?? 'NOT_FOUND',
 			) );
 
 			/**

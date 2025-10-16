@@ -329,6 +329,7 @@ class ProgressStorage {
 		return false !== $result;
 	}
 
+
 	/**
 	 * Get client IP address
 	 * 

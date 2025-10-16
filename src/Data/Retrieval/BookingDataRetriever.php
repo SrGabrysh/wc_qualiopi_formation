@@ -111,7 +111,7 @@ class BookingDataRetriever {
 		 * @param array  $profile Complete profile
 		 * @param string $token   Token identifier
 		 */
-		return apply_filters( 'wcqf_complete_profile', $profile, $token );
+		return \apply_filters( 'wcqf_complete_profile', $profile, $token );
 	}
 
 	/**
@@ -150,6 +150,20 @@ class BookingDataRetriever {
 		}
 
 		return $progress['collected_data'];
+	}
+
+	/**
+	 * Get booking details from WooCommerce cart
+	 * 
+	 * Delegates to CartBookingRetriever for cart-based booking data retrieval.
+	 * This method is kept for backward compatibility.
+	 * 
+	 * @since 1.2.0
+	 * @deprecated 1.2.0 Use CartBookingRetriever::get_booking_details() instead
+	 * @return array Array of booking details
+	 */
+	public static function get_details_from_cart(): array {
+		return CartBookingRetriever::get_booking_details();
 	}
 }
 

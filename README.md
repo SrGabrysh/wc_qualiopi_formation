@@ -1,6 +1,6 @@
 # WC Qualiopi Formation
 
-**Version:** 1.5.0
+**Version:** 1.6.0
 
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 
@@ -229,6 +229,15 @@ composer phpcbf
 ## 📝 Changelog
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
+
+### Version 1.6.0 - 2025-10-16
+
+- **Injection de 9 champs RO dans les documents Yousign** : Pré-remplissage automatique des contrats de formation
+  - Données injectées : convention_id, noms complets, mentions légales, dates, totaux HT/TTC/TVA
+  - Nouvelle classe `YousignDataCollector` pour centraliser la collection de données
+  - Nouvelle méthode `CartBookingRetriever::get_cart_totals()` pour les totaux financiers
+- **Correction bugs critiques** : Mentions légales et totaux panier maintenant correctement injectés dans Yousign
+- **Architecture renforcée** : Séparation stricte des responsabilités entre collection et construction de payload
 
 ### Version 1.5.0 - 2025-10-16
 

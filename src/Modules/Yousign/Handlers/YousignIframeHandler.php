@@ -18,6 +18,7 @@ use WcQualiopiFormation\Helpers\YousignConfigManager;
 use WcQualiopiFormation\Security\SessionManager;
 use WcQualiopiFormation\Modules\Yousign\Client\YousignClient;
 use WcQualiopiFormation\Modules\Yousign\Payload\PayloadBuilder;
+use WcQualiopiFormation\Modules\Yousign\Helpers\YousignDataCollector;
 use WcQualiopiFormation\Form\Tracking\DataExtractor;
 use WcQualiopiFormation\Data\ProgressTracker;
 
@@ -182,45 +183,71 @@ class YousignIframeHandler {
 			return;
 		}
 
-		// Extraire les données utilisateur via DataExtractor (centralisé)
-		$personal_data = $this->data_extractor->extract_personal(
-			$transition_data['submission_data'],
-			$transition_data['form']
-		);
-
-		// Valider les données extraites
-		if ( empty( $personal_data['first_name'] ) || empty( $personal_data['last_name'] ) || ! is_email( $personal_data['email'] ) ) {
-			LoggingHelper::error( '[YousignIframe] Invalid personal data after extraction', array(
-				'has_first_name' => ! empty( $personal_data['first_name'] ),
-				'has_last_name'  => ! empty( $personal_data['last_name'] ),
-				'has_email'      => ! empty( $personal_data['email'] ),
+		// Récupérer le token depuis la session WordPress
+		$token = SessionManager::get( Constants::SESSION_KEY_TOKEN );
+		if ( empty( $token ) ) {
+			LoggingHelper::error( '[YousignIframe] No token in session', array(
+				'form_id'         => $transition_data['form_id'],
+				'session_checked' => Constants::SESSION_KEY_TOKEN,
 			) );
 			return;
 		}
 
-		// Adapter le format pour l'API Yousign
+		// Collecter TOUTES les données nécessaires pour Yousign via DataCollector
+		$enriched_data = YousignDataCollector::collect_all_data(
+			$transition_data['submission_data'],
+			$transition_data['form'],
+			$token
+		);
+
+		if ( empty( $enriched_data ) ) {
+			LoggingHelper::error( '[YousignIframe] Could not collect Yousign data', array(
+				'form_id'       => $transition_data['form_id'],
+				'token_preview' => substr( $token, 0, 10 ),
+			) );
+			return;
+		}
+
+		// Valider les données de base (obligatoires pour l'API)
+		if ( empty( $enriched_data['first_name'] ) || empty( $enriched_data['last_name'] ) || ! is_email( $enriched_data['email'] ) ) {
+			LoggingHelper::error( '[YousignIframe] Invalid base data after collection', array(
+				'has_first_name' => ! empty( $enriched_data['first_name'] ),
+				'has_last_name'  => ! empty( $enriched_data['last_name'] ),
+				'has_email'      => ! empty( $enriched_data['email'] ),
+			) );
+			return;
+		}
+
+		// Adapter les données au format API Yousign
 		$user_data = array(
-			'firstName' => $personal_data['first_name'],
-			'lastName'  => $personal_data['last_name'],
-			'email'     => $personal_data['email'],
+			'firstName'            => $enriched_data['first_name'],
+			'lastName'             => $enriched_data['last_name'],
+			'email'                => $enriched_data['email'],
+			'full_name'            => $enriched_data['full_name'] ?? '',
+			'full_name_stagiaire'  => $enriched_data['full_name_stagiaire'] ?? '',
+			'mentions_legales'     => $enriched_data['mentions_legales'] ?? '',
+			'date_realisation'     => $enriched_data['date_realisation'] ?? '',
+			'date_jour'            => $enriched_data['date_jour'] ?? '',
+			'total_ht'             => $enriched_data['total_ht'] ?? '0,00 €',
+			'total_ttc'            => $enriched_data['total_ttc'] ?? '0,00 €',
+			'tva'                  => $enriched_data['tva'] ?? '0,00 €',
 		);
 
 		LoggingHelper::debug( '[YousignIframe] User data prepared for API', array(
-			'has_first_name' => ! empty( $user_data['firstName'] ),
-			'has_last_name'  => ! empty( $user_data['lastName'] ),
-			'has_email'      => ! empty( $user_data['email'] ),
+			'has_first_name'       => ! empty( $user_data['firstName'] ),
+			'has_last_name'        => ! empty( $user_data['lastName'] ),
+			'has_email'            => ! empty( $user_data['email'] ),
+			'has_full_name'        => ! empty( $user_data['full_name'] ),
+			'has_mentions_legales' => ! empty( $user_data['mentions_legales'] ),
+			'has_date_realisation' => ! empty( $user_data['date_realisation'] ),
+			'has_total_ht'         => ! empty( $user_data['total_ht'] ),
+			'has_total_ttc'        => ! empty( $user_data['total_ttc'] ),
+			'has_tva'              => ! empty( $user_data['tva'] ),
 		) );
 
-
-	// NOUVEAU : Générer le convention_id AVANT de construire le payload
-	// Récupérer le token depuis la session WordPress (pas depuis le formulaire GF)
-	$token = SessionManager::get( Constants::SESSION_KEY_TOKEN );
-	$convention_id = '';
-
-	// Valider que le token existe avant de générer le convention_id
-	if ( ! empty( $token ) ) {
+		// Générer le convention_id
 		$convention_id = $this->generate_and_store_convention_id( $token );
-		
+
 		if ( ! $convention_id ) {
 			LoggingHelper::warning( '[YousignIframe] Could not generate convention_id, continuing without it', array(
 				'token_preview' => substr( $token, 0, 10 ),
@@ -228,11 +255,6 @@ class YousignIframeHandler {
 			// Non-bloquant : on continue sans convention_id (forcer string vide)
 			$convention_id = '';
 		}
-	} else {
-		LoggingHelper::warning( '[YousignIframe] No token in session, skipping convention_id generation', array(
-			'session_checked' => Constants::SESSION_KEY_TOKEN,
-		) );
-	}
 
 		// Construire le payload via PayloadBuilder (avec convention_id)
 		$payload = $this->payload_builder->build_signature_request_payload( $user_data, $config, $convention_id );

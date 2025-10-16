@@ -20,6 +20,7 @@ use WcQualiopiFormation\Form\GravityForms\FieldMapper;
 use WcQualiopiFormation\Form\GravityForms\CalculationRetriever;
 use WcQualiopiFormation\Form\GravityForms\PageTransitionManager;
 use WcQualiopiFormation\Form\GravityForms\PageTransitionHandler;
+use WcQualiopiFormation\Form\GravityForms\BookingTransitionHandler;
 use WcQualiopiFormation\Form\GravityForms\PositioningHelper;
 use WcQualiopiFormation\Form\GravityForms\ResultsInjector;
 use WcQualiopiFormation\Modules\Yousign\Handlers\YousignIframeHandler;
@@ -116,6 +117,13 @@ class FormManager {
 	private $page_transition_handler;
 
 	/**
+	 * Instance BookingTransitionHandler
+	 *
+	 * @var BookingTransitionHandler
+	 */
+	private $booking_transition_handler;
+
+	/**
 	 * Instance ResultsInjector
 	 *
 	 * @var ResultsInjector
@@ -156,10 +164,14 @@ class FormManager {
 		if ( $this->is_page_transition_module_enabled() ) {
 			// Manager global : détecte TOUTES les transitions et déclenche action WP.
 			$this->page_transition_manager = new PageTransitionManager();
+			
 			// Handler spécialisé : écoute l'action et traite uniquement la transition 2→3.
 			$this->page_transition_handler = new PageTransitionHandler( $this->calculation_retriever );
 			
-			LoggingHelper::info( '[FormManager] Module PageTransition activé' );
+			// Handler spécialisé : écoute l'action et traite uniquement la transition 3→4.
+			$this->booking_transition_handler = new BookingTransitionHandler();
+			
+			LoggingHelper::info( '[FormManager] Module PageTransition activé (handlers: PageTransition + BookingTransition)' );
 		} else {
 			LoggingHelper::info( '[FormManager] Module PageTransition désactivé via settings' );
 		}
@@ -219,6 +231,11 @@ class FormManager {
 		// PageTransitionHandler - init_hooks() appelé explicitement (convention)
 		if ( $this->page_transition_handler !== null ) {
 			$this->page_transition_handler->init_hooks();
+		}
+
+		// BookingTransitionHandler - init_hooks() appelé explicitement (convention)
+		if ( $this->booking_transition_handler !== null ) {
+			$this->booking_transition_handler->init_hooks();
 		}
 
 		// YousignIframeHandler - init_hooks() appelé explicitement (convention)
@@ -332,6 +349,16 @@ class FormManager {
 	 */
 	public function get_page_transition_handler() {
 		return $this->page_transition_handler ?? null;
+	}
+
+	/**
+	 * Récupère l'instance BookingTransitionHandler
+	 *
+	 * @since 1.2.0
+	 * @return BookingTransitionHandler|null Null si le module est désactivé.
+	 */
+	public function get_booking_transition_handler() {
+		return $this->booking_transition_handler ?? null;
 	}
 }
 

@@ -7,6 +7,47 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.6.0] - 2025-10-16
+
+### Added
+
+- **Injection de 9 champs Read-Only (RO) dans les documents Yousign** pour pré-remplissage automatique des contrats de formation
+  - `convention_id` : Identifiant unique de convention (déjà existant, conservé)
+  - `full_name` : Nom complet du signataire formaté (Prénom NOM)
+  - `full_name_stagiaire` : Nom complet du stagiaire (identique au signataire)
+  - `mentions_legales` : Mentions légales HTML depuis Gravity Forms (field ID 13)
+  - `date_realisation` : Date de la formation extraite depuis WooCommerce Bookings
+  - `date_jour` : Date de signature (date actuelle au format français)
+  - `total_ht` : Total HT du panier WooCommerce formaté (ex: "150,00 €")
+  - `total_ttc` : Total TTC du panier WooCommerce formaté
+  - `tva` : Montant de la TVA calculé (TTC - HT)
+- **YousignDataCollector** : Nouvelle classe helper pour centraliser la collection de toutes les données Yousign
+  - Méthodes : `collect_all_data()`, `get_mentions_legales()`, `get_booking_dates()`, `get_cart_totals()`
+  - Principe SRP : responsabilité unique de collection de données
+  - Logging détaillé à chaque étape de la collection
+- **CartBookingRetriever::get_cart_totals()** : Nouvelle méthode pour récupérer les totaux financiers du panier
+  - Calcul automatique de la TVA (TTC - HT)
+  - Formatage français : virgule décimale, espace milliers, symbole €
+  - Gestion robuste des cas d'erreur (WooCommerce indisponible, panier vide)
+
+### Fixed
+
+- **Bug critique récupération mentions légales** : Les mentions générées par le plugin n'étaient jamais injectées dans Yousign
+  - Cause : `YousignDataCollector` lisait le champ ID 13 depuis `ProgressTracker` (données page 2→3) au lieu de `$submission_data` (données actuelles page 3→4)
+  - Solution : Lecture directe depuis `$submission_data['13']` pour récupérer les mentions légales de la soumission en cours
+  - Impact : Les mentions légales s'affichent maintenant correctement dans les documents Yousign
+- **Bug transmission totaux panier à PayloadBuilder** : Les montants HT/TTC/TVA étaient collectés mais perdus lors de la construction du payload
+  - Cause : `YousignIframeHandler::create_yousign_procedure()` ne transmettait pas les champs financiers à `PayloadBuilder`
+  - Solution : Ajout de `total_ht`, `total_ttc`, `tva` dans le tableau `$user_data` transmis au builder
+  - Impact : Les totaux financiers s'affichent maintenant correctement dans les contrats
+
+### Changed
+
+- **Architecture modulaire renforcée** : Séparation stricte des responsabilités entre collection (DataCollector) et construction (PayloadBuilder)
+  - `YousignDataCollector` centralise toute la logique de récupération de données depuis multiples sources
+  - `CartBookingRetriever` étendu pour gérer les totaux financiers en plus des dates de réservation
+  - Amélioration de la maintenabilité et de la testabilité du module Yousign
+
 ## [1.5.0] - 2025-10-16
 
 ### Fixed

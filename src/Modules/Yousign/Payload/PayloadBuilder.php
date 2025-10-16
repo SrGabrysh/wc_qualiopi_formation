@@ -126,28 +126,76 @@ class PayloadBuilder {
 	 * Ces champs permettent d'afficher les données utilisateur dans le document PDF
 	 * sans être des zones de signature.
 	 *
-	 * @param array  $user_data     Données utilisateur.
+	 * IMPORTANT : Seuls les champs présents dans le template Yousign doivent être injectés.
+	 * Liste des champs RO du template : convention_id, mentions_legales, full_name,
+	 * full_name_stagiaire, date_realisation, date_jour
+	 *
+	 * @param array  $user_data     Données utilisateur enrichies (YousignDataCollector).
 	 * @param string $convention_id Identifiant de convention (optionnel).
 	 * @return array Read-only text fields.
 	 */
 	private function build_readonly_fields( array $user_data, string $convention_id = '' ): array {
+		// IMPORTANT : Yousign API exige que TOUS les placeholders RO définis dans le template
+		// soient remplis, même avec des valeurs vides. Ne pas utiliser de conditions if (!empty())
+		
 		$fields = array(
-			array( 'label' => 'first_name', 'text' => $user_data['firstName'] ?? '' ),
-			array( 'label' => 'last_name',  'text' => $user_data['lastName'] ?? '' ),
-			array( 'label' => 'email',      'text' => $user_data['email'] ?? '' ),
-		);
-
-		// NOUVEAU : Ajouter le convention_id aux champs read-only si présent
-		if ( ! empty( $convention_id ) ) {
-			$fields[] = array(
+			// Convention ID
+			array(
 				'label' => 'convention_id',
 				'text'  => $convention_id,
-			);
+			),
+			// Noms complets formatés
+			array(
+				'label' => 'full_name',
+				'text'  => $user_data['full_name'] ?? '',
+			),
+			array(
+				'label' => 'full_name_stagiaire',
+				'text'  => $user_data['full_name_stagiaire'] ?? '',
+			),
+			// Mentions légales (HTML autorisé)
+			array(
+				'label' => 'mentions_legales',
+				'text'  => $user_data['mentions_legales'] ?? '',
+			),
+			// Date de réalisation (date de la formation)
+			array(
+				'label' => 'date_realisation',
+				'text'  => $user_data['date_realisation'] ?? '',
+			),
+			// Date du jour (date de signature)
+			array(
+				'label' => 'date_jour',
+				'text'  => $user_data['date_jour'] ?? '',
+			),
+			// Total HT
+			array(
+				'label' => 'total_ht',
+				'text'  => $user_data['total_ht'] ?? '0,00 €',
+			),
+			// Total TTC
+			array(
+				'label' => 'total_ttc',
+				'text'  => $user_data['total_ttc'] ?? '0,00 €',
+			),
+			// TVA
+			array(
+				'label' => 'tva',
+				'text'  => $user_data['tva'] ?? '0,00 €',
+			),
+		);
 
-			LoggingHelper::debug( '[PayloadBuilder] Convention ID injected into read_only_text_fields', array(
-				'convention_id' => $convention_id,
-			) );
-		}
+		LoggingHelper::debug( '[PayloadBuilder] Read-only fields built', array(
+			'fields_count'          => count( $fields ),
+			'has_convention_id'     => ! empty( $convention_id ),
+			'has_full_name'         => ! empty( $user_data['full_name'] ),
+			'has_mentions_legales'  => ! empty( $user_data['mentions_legales'] ),
+			'has_date_realisation'  => ! empty( $user_data['date_realisation'] ),
+			'has_date_jour'         => ! empty( $user_data['date_jour'] ),
+			'has_total_ht'          => ! empty( $user_data['total_ht'] ),
+			'has_total_ttc'         => ! empty( $user_data['total_ttc'] ),
+			'has_tva'               => ! empty( $user_data['tva'] ),
+		) );
 
 		return $fields;
 	}
@@ -168,7 +216,7 @@ class PayloadBuilder {
 		}
 
 		// Valider l'email
-		if ( ! \is_email( $user_data['email'] ) ) {
+		if ( ! is_email( $user_data['email'] ) ) {
 			return false;
 		}
 

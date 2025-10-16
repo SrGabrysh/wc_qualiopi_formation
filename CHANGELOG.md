@@ -7,6 +7,30 @@ et ce projet adhère au [Semantic Versioning](https://semver.org/lang/fr/).
 
 ## [Unreleased]
 
+## [1.5.0] - 2025-10-16
+
+### Fixed
+
+- **Bug génération convention_id** : L'iframe Yousign ne se générait pas (erreur 400 API Yousign) car le convention_id n'était jamais créé
+  - Cause identifiée : La méthode `generate_and_store_convention_id()` dépendait d'une progression en BDD qui n'était jamais créée lors du workflow
+  - Solution appliquée : Génération directe du convention_id depuis les données WooCommerce (session + panier) sans dépendre de la base de données
+  - Impact utilisateur : L'interface de signature électronique Yousign s'affiche maintenant correctement sur la page 4 du formulaire
+
+### Changed
+
+- **Réécriture complète de `generate_and_store_convention_id()`** dans `YousignIframeHandler.php` pour simplification architecturale majeure
+  - Suppression de la dépendance à `ProgressTracker::get_progress()` (requête BDD inutile)
+  - Récupération directe des données depuis `WC()->session->get_customer_id()` et panier WooCommerce
+  - Réduction de la complexité du code et amélioration de la fiabilité (génération toujours réussie)
+  - Format convention*id maintenu : `{session_id}*{product*id}*{timestamp}`
+
+### Added
+
+- **Nouvelle méthode `get_product_id_from_cart()`** : Récupération du product_id directement depuis le panier WooCommerce
+  - Méthode privée dans `YousignIframeHandler` pour encapsuler la logique d'accès au panier
+  - Fallback robuste si WooCommerce ou panier indisponibles (retourne 0)
+  - Amélioration de la testabilité et de la maintenabilité
+
 ## [1.4.2] - 2025-10-15
 
 ### Fixed

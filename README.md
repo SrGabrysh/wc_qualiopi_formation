@@ -1,6 +1,6 @@
 # WC Qualiopi Formation
 
-**Version:** 1.4.3
+**Version:** 1.5.0
 
 **Plugin WordPress unifié pour tunnel de formation Qualiopi avec pré-remplissage checkout automatique**
 
@@ -230,6 +230,14 @@ composer phpcbf
 
 Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique complet.
 
+### Version 1.5.0 - 2025-10-16
+
+- **Correction bug critique génération convention_id** : L'iframe Yousign s'affiche maintenant correctement
+  - Le convention_id est généré directement depuis WooCommerce (session + panier) sans dépendre de la BDD
+  - Réécriture complète de `generate_and_store_convention_id()` pour simplification architecturale
+  - Nouvelle méthode `get_product_id_from_cart()` pour récupération robuste du product_id
+  - Plus fiable et plus simple : génération toujours réussie
+
 ### Version 1.4.2 - 2025-10-15
 
 - **Correction bug majeur iframe Yousign** : Interface de signature maintenant pleinement utilisable
@@ -356,4 +364,4 @@ GPL v2 or later - [https://www.gnu.org/licenses/gpl-2.0.html](https://www.gnu.or
 
 ---
 
-Dernière mise à jour : 2025-10-15
+Dernière mise à jour : 2025-10-16

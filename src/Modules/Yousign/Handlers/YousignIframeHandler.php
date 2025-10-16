@@ -212,26 +212,27 @@ class YousignIframeHandler {
 		) );
 
 
-		// NOUVEAU : Générer le convention_id AVANT de construire le payload
-		$token = $transition_data['token'] ?? '';
-		$convention_id = '';
+	// NOUVEAU : Générer le convention_id AVANT de construire le payload
+	// Récupérer le token depuis la session WordPress (pas depuis le formulaire GF)
+	$token = SessionManager::get( Constants::SESSION_KEY_TOKEN );
+	$convention_id = '';
 
-		// Valider que le token existe avant de générer le convention_id
-		if ( ! empty( $token ) ) {
-			$convention_id = $this->generate_and_store_convention_id( $token );
-			
-			if ( ! $convention_id ) {
-				LoggingHelper::warning( '[YousignIframe] Could not generate convention_id, continuing without it', array(
-					'token_preview' => substr( $token, 0, 10 ),
-				) );
-				// Non-bloquant : on continue sans convention_id (forcer string vide)
-				$convention_id = '';
-			}
-		} else {
-			LoggingHelper::warning( '[YousignIframe] No token provided, skipping convention_id generation', array(
-				'transition_data_keys' => array_keys( $transition_data ),
+	// Valider que le token existe avant de générer le convention_id
+	if ( ! empty( $token ) ) {
+		$convention_id = $this->generate_and_store_convention_id( $token );
+		
+		if ( ! $convention_id ) {
+			LoggingHelper::warning( '[YousignIframe] Could not generate convention_id, continuing without it', array(
+				'token_preview' => substr( $token, 0, 10 ),
 			) );
+			// Non-bloquant : on continue sans convention_id (forcer string vide)
+			$convention_id = '';
 		}
+	} else {
+		LoggingHelper::warning( '[YousignIframe] No token in session, skipping convention_id generation', array(
+			'session_checked' => Constants::SESSION_KEY_TOKEN,
+		) );
+	}
 
 		// Construire le payload via PayloadBuilder (avec convention_id)
 		$payload = $this->payload_builder->build_signature_request_payload( $user_data, $config, $convention_id );
@@ -375,52 +376,41 @@ class YousignIframeHandler {
 	}
 
 	/**
-	 * Génère et stocke le convention_id basé sur la session WooCommerce
+	 * Génère le convention_id basé sur la session WooCommerce (GÉNÉRATION DIRECTE)
 	 * 
 	 * Format : {session_id}_{product_id}_{unix_timestamp}
 	 * Fallback utilisateurs connectés : user_{user_id}_{product_id}_{unix_timestamp}
 	 * 
-	 * @param string $token Token HMAC du parcours (pour récupérer les données de progression)
+	 * Note : Ne dépend PAS de la progression en BDD (données récupérées directement)
+	 * 
+	 * @param string $token Token HMAC (non utilisé, conservé pour compatibilité)
 	 * @return string|null Convention ID généré ou null si erreur
 	 */
 	private function generate_and_store_convention_id( string $token ): ?string {
-		LoggingHelper::debug( '[YousignIframe] Starting convention_id generation', array(
+		LoggingHelper::debug( '[YousignIframe] Starting convention_id generation (direct)', array(
 			'token_preview' => substr( $token, 0, 10 ),
-			'token_length'  => strlen( $token ),
 		) );
 
-		// 1. Récupérer les données de progression via le token HMAC
-		$progress = ProgressTracker::get_progress( $token );
-		if ( ! $progress ) {
-			LoggingHelper::error( '[YousignIframe] Progress not found for convention_id generation', array(
-				'token_preview' => substr( $token, 0, 10 ),
-				'token_full'    => $token, // Log complet pour debug
-			) );
-			return null;
+		// 1. Récupérer session_id depuis WooCommerce (directement, pas depuis BDD)
+		$session_id = '';
+		if ( function_exists( 'WC' ) && WC()->session ) {
+			$session_id = WC()->session->get_customer_id();
 		}
 
-		LoggingHelper::debug( '[YousignIframe] Progress data retrieved', array(
-			'has_session_id' => ! empty( $progress['session_id'] ),
-			'has_product_id' => ! empty( $progress['product_id'] ),
-			'has_user_id'    => ! empty( $progress['user_id'] ),
-			'progress_keys'  => array_keys( $progress ),
-		) );
-
-		// 2. Récupérer session_id (déjà stocké en BDD par ProgressStorage::start)
-		$session_id = $progress['session_id'] ?? '';
-		$product_id = $progress['product_id'] ?? 0;
-		$user_id    = $progress['user_id'] ?? 0;
+		// 2. Récupérer product_id depuis le panier (directement, pas depuis BDD)
+		$product_id = $this->get_product_id_from_cart();
 
 		// 3. Validation du product_id
 		if ( empty( $product_id ) ) {
 			LoggingHelper::error( '[YousignIframe] Missing product_id for convention_id', array(
-				'token_preview' => substr( $token, 0, 10 ),
+				'cart_empty' => function_exists( 'WC' ) && WC()->cart ? WC()->cart->is_empty() : true,
 			) );
 			return null;
 		}
 
-		// 4. Fallback pour utilisateurs connectés (session_id peut être vide)
+		// 4. Fallback pour utilisateurs connectés (si session WC vide)
 		if ( empty( $session_id ) ) {
+			$user_id = get_current_user_id();
 			if ( ! empty( $user_id ) ) {
 				$session_id = 'user_' . $user_id;
 				LoggingHelper::debug( '[YousignIframe] Using user_id fallback for convention_id', array(
@@ -429,7 +419,8 @@ class YousignIframeHandler {
 				) );
 			} else {
 				LoggingHelper::error( '[YousignIframe] No session_id or user_id available', array(
-					'token_preview' => substr( $token, 0, 10 ),
+					'wc_session_exists' => function_exists( 'WC' ) && WC()->session,
+					'user_logged_in'    => is_user_logged_in(),
 				) );
 				return null;
 			}
@@ -439,37 +430,36 @@ class YousignIframeHandler {
 		$timestamp     = time();
 		$convention_id = sprintf( '%s_%d_%d', $session_id, $product_id, $timestamp );
 
-		// 6. Stocker dans la colonne dédiée de wp_wcqf_progress
-		global $wpdb;
-		$table_name = Constants::get_table_name( Constants::TABLE_PROGRESS );
-
-		$result = $wpdb->update(
-			$table_name,
-			array( 'convention_id' => $convention_id ),
-			array( 'token' => $token ),
-			array( '%s' ),
-			array( '%s' )
-		);
-
-		if ( false === $result ) {
-			LoggingHelper::error( '[YousignIframe] Failed to store convention_id in database', array(
-				'token_preview' => substr( $token, 0, 10 ),
-				'convention_id' => $convention_id,
-				'wpdb_error'    => $wpdb->last_error,
-			) );
-			return null;
-		}
-
-		// 7. Log de succès
-		LoggingHelper::info( '[YousignIframe] Convention ID generated and stored', array(
-			'convention_id' => $convention_id,
-			'token_preview' => substr( $token, 0, 10 ),
-			'product_id'    => $product_id,
-			'session_id'    => substr( $session_id, 0, 15 ) . '...',
-			'timestamp'     => $timestamp,
+		// 6. Log de succès (pas de stockage en BDD car pas de progression)
+		LoggingHelper::info( '[YousignIframe] Convention ID generated successfully', array(
+			'convention_id'     => $convention_id,
+			'product_id'        => $product_id,
+			'session_id_preview' => substr( $session_id, 0, 15 ) . '...',
+			'timestamp'         => $timestamp,
+			'source'            => empty( WC()->session ) ? 'user_id' : 'wc_session',
 		) );
 
 		return $convention_id;
+	}
+
+	/**
+	 * Récupère le product_id depuis le panier WooCommerce
+	 *
+	 * @return int Product ID ou 0 si panier vide
+	 */
+	private function get_product_id_from_cart(): int {
+		if ( ! function_exists( 'WC' ) || ! WC()->cart ) {
+			return 0;
+		}
+
+		$cart_items = WC()->cart->get_cart();
+		if ( empty( $cart_items ) ) {
+			return 0;
+		}
+
+		// Récupérer le premier produit du panier
+		$first_item = reset( $cart_items );
+		return $first_item['product_id'] ?? 0;
 	}
 }
 

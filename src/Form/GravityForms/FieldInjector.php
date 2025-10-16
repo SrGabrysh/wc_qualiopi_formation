@@ -71,30 +71,81 @@ class FieldInjector {
 			return $form;
 		}
 
-		// Récupérer ou créer le token.
-		$token = $this->get_or_create_token();
+	// Récupérer ou créer le token.
+	$token = $this->get_or_create_token();
 
-		if ( empty( $token ) ) {
-			LoggingHelper::error( 'Failed to generate token for form', array( 'form_id' => $form['id'] ) );
-			return $form;
-		}
+	// ✅ LOG AJOUTÉ POUR DEBUG - Phase 1
+	LoggingHelper::info( '[FieldInjector] Token injection attempt', array(
+		'form_id'       => $form['id'],
+		'token_empty'   => empty( $token ),
+		'token_length'  => strlen( $token ),
+		'token_preview' => $token ? substr( $token, 0, 20 ) . '...' : '(empty)',
+	) );
 
-		// Créer le champ caché pour le token.
-		$token_field = array(
-			'type'         => 'hidden',
-			'id'           => 9999, // ID très élevé pour éviter conflits.
-			'label'        => 'WCQF Token',
-			'adminLabel'   => 'Token HMAC',
-			'cssClass'     => 'wcqf-token-field',
-			'defaultValue' => $token,
-		);
-
-		// Ajouter le champ au formulaire.
-		$form['fields'][] = \GF_Fields::create( $token_field );
-
-		LoggingHelper::info( 'Token field injected', array( 'form_id' => $form['id'], 'token' => substr( $token, 0, 10 ) . '...' ) );
-
+	if ( empty( $token ) ) {
+		LoggingHelper::error( '[FieldInjector] Token is empty, cannot inject field', array(
+			'form_id'  => $form['id'],
+			'user_id'  => get_current_user_id(),
+			'has_cart' => function_exists( 'WC' ) && WC()->cart && ! WC()->cart->is_empty(),
+		) );
 		return $form;
+	}
+
+	// Créer le champ caché pour le token avec TOUTES les propriétés requises par GF.
+	$token_field = array(
+		'type'              => 'hidden',
+		'id'                => 9999, // ID très élevé pour éviter conflits.
+		'formId'            => $form['id'],
+		'label'             => 'WCQF Token',
+		'adminLabel'        => 'Token HMAC',
+		'cssClass'          => 'wcqf-token-field',
+		'defaultValue'      => $token,
+		'isRequired'        => false,
+		'visibility'        => 'hidden',
+		'displayOnly'       => true,
+		'allowsPrepopulate' => false,
+	);
+
+	// Créer l'objet champ via GF_Fields.
+	$field_object = \GF_Fields::create( $token_field );
+
+	if ( ! $field_object ) {
+		LoggingHelper::error( '[FieldInjector] Failed to create token field object', array(
+			'form_id'     => $form['id'],
+			'field_array' => $token_field,
+		) );
+		return $form;
+	}
+
+	// Ajouter le champ au formulaire.
+	$form['fields'][] = $field_object;
+
+	// Vérifier que le champ a bien été ajouté.
+	$field_ids = array_map(
+		function( $field ) {
+			return isset( $field->id ) ? $field->id : ( isset( $field['id'] ) ? $field['id'] : 'unknown' );
+		},
+		$form['fields']
+	);
+
+	$field_added = in_array( 9999, $field_ids, true );
+
+	LoggingHelper::info( '[FieldInjector] Token field injection result', array(
+		'form_id'       => $form['id'],
+		'token_preview' => substr( $token, 0, 20 ) . '...',
+		'field_added'   => $field_added,
+		'total_fields'  => count( $form['fields'] ),
+		'field_ids'     => $field_ids,
+	) );
+
+	if ( ! $field_added ) {
+		LoggingHelper::error( '[FieldInjector] Token field not added to form', array(
+			'form_id'   => $form['id'],
+			'field_ids' => $field_ids,
+		) );
+	}
+
+	return $form;
 	}
 
 	/**

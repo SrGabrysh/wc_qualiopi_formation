@@ -105,26 +105,50 @@ class PageTransitionManager {
 				return;
 			}
 
-			// Déterminer la direction de navigation
-			$direction = $this->get_direction( $source_page, $current_page );
+		// Déterminer la direction de navigation
+		$direction = $this->get_direction( $source_page, $current_page );
 
-			// Construire le payload complet
-			$transition_data = $this->build_transition_data(
-				$form,
-				$submission_data,
-				$source_page,
-				$current_page,
-				$direction
-			);
+		// ✅ LOG AJOUTÉ POUR DEBUG - Phase 1 - Extraction du token
+		$token_field_id  = 9999; // ID du champ caché token.
+		$token_from_form = $submission_data[ $token_field_id ] ?? '';
 
-			// Log de la transition détectée
-			LoggingHelper::info( '[PageTransitionManager] Transition detected', array(
-				'form_id'    => $transition_data['form_id'],
-				'from_page'  => $transition_data['from_page'],
-				'to_page'    => $transition_data['to_page'],
-				'direction'  => $transition_data['direction'],
-				'entry_id'   => $transition_data['entry_id'],
-			) );
+		LoggingHelper::info( '[PageTransitionManager] Token extraction from form', array(
+			'form_id'            => $form['id'],
+			'from_page'          => $source_page,
+			'to_page'            => $current_page,
+			'field_id_checked'   => $token_field_id,
+			'field_exists'       => isset( $submission_data[ $token_field_id ] ),
+			'token_empty'        => empty( $token_from_form ),
+			'token_preview'      => $token_from_form ? substr( $token_from_form, 0, 20 ) . '...' : '(empty)',
+			'submission_data_keys' => array_keys( $submission_data ),
+		) );
+
+	// Construire le payload complet
+	$transition_data = $this->build_transition_data(
+		$form,
+		$submission_data,
+		$source_page,
+		$current_page,
+		$direction
+	);
+
+		// ✅ LOG AJOUTÉ POUR DEBUG - Phase 1 - Validation transition_data
+		LoggingHelper::info( '[PageTransitionManager] Transition data built', array(
+			'form_id'            => $form['id'],
+			'has_token_in_data'  => ! empty( $transition_data['token'] ),
+			'token_value_preview' => ! empty( $transition_data['token'] )
+				? substr( $transition_data['token'], 0, 20 ) . '...'
+				: '(empty)',
+		) );
+
+		// Log de la transition détectée
+		LoggingHelper::info( '[PageTransitionManager] Transition detected', array(
+			'form_id'    => $transition_data['form_id'],
+			'from_page'  => $transition_data['from_page'],
+			'to_page'    => $transition_data['to_page'],
+			'direction'  => $transition_data['direction'],
+			'entry_id'   => $transition_data['entry_id'],
+		) );
 
 			// Log debug du payload construit
 			LoggingHelper::debug( '[PageTransitionManager] Payload built', array(
